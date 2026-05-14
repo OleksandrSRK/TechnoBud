@@ -8,10 +8,17 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+function log(message: string) {
+    console.log(`[LOG] ${new Date().toISOString()} - ${message}`);
+}
+log("Server started");
+
 /**
  * GET all products
  */
 app.get('/products', async (_req, res) => {
+    log("GET /products");
+
     const data = await prisma.product.findMany();
     res.json(data);
 });
@@ -20,9 +27,13 @@ app.get('/products', async (_req, res) => {
  * CREATE product
  */
 app.post('/products', async (req, res) => {
+    log("POST /products");
+
     const item = await prisma.product.create({
         data: req.body
     });
+
+    log("Product created");
 
     res.json(item);
 });
@@ -61,3 +72,9 @@ app.delete('/products/:id', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running: http://localhost:${PORT}`);
 });
+
+
+function track(event: string, data?: any) {
+    console.log(`[ANALYTICS] ${event}`, data || "");
+}
+
