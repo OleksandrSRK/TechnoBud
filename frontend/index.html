@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TechnoBud Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Science+Gothic&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+<!--
+    =========================
+    HEADER (для всіх сторінок)
+    =========================
+-->
+
+<header class="header">
+
+    <!-- Логотип -->
+    <div class="logo">
+        TechnoBud
+    </div>
+
+    <!-- Кнопка каталогу -->
+    <div class="catalog">
+        <button class="catalog-btn">Catalog ▼</button>
+
+        <!-- Випадаюче меню -->
+        <div class="dropdown">
+            <a href="#">Washing Machines</a>
+            <a href="#">Refrigerators</a>
+            <a href="#">TV</a>
+            <a href="#">Vacuum Cleaners</a>
+        </div>
+    </div>
+
+    <!-- Пошук -->
+    <div class="search">
+        <input type="text" placeholder="Search products...">
+    </div>
+
+    <!-- Іконки -->
+    <div class="icons">
+        <span class="icon">♡ Wishlist</span>
+        <span class="icon">🛒 Cart</span>
+    </div>
+
+</header>
+
+
+<!--
+    =========================
+    MAIN CONTENT
+    =========================
+-->
+
+<main class="main">
+
+    <!-- Банер -->
+    <section class="banner">
+        <!-- Тут буде картинка -->
+        <div class="banner-placeholder">
+            Banner Area
+        </div>
+    </section>
+
+    <!-- Контент -->
+    <section class="content">
+
+        <!-- Фільтри зліва -->
+        <aside class="filters">
+            <h3>Categories</h3>
+
+            <ul>
+                <li>Washing Machines</li>
+                <li>Refrigerators</li>
+                <li>TV</li>
+                <li>Vacuum Cleaners</li>
+                <li>Microwaves</li>
+            </ul>
+        </aside>
+
+        <!-- ТОВАРИ (З API) -->
+        <section class="products" id="products"></section>
+
+
+    </section>
+
+
+</main>
+
+<script src="./js/main.js"></script>
+
+</body>
+</html>
