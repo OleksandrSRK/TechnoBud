@@ -1,0 +1,256 @@
+:root {
+    --tb-primary: #1E88E5;
+    --tb-bg: #FFFFFF;
+    --tb-surface: #F5F5F5;
+    --tb-accent: #FF6F00;
+    --tb-text: #212121;
+    --tb-muted: #EAF3FF;
+    --tb-border: rgba(255, 255, 255, 0.18);
+    --tb-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.tb-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(135deg, #1E88E5, #1565C0);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.tb-container {
+    width: min(1400px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+.tb-header-inner {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 0;
+}
+
+.tb-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.tb-brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
+
+.tb-brand-title {
+    font-family: "Science Gothic Bold", "Science Gothic Medium", sans-serif;
+    font-size: 18px;
+    line-height: 1.1;
+    color: #fff;
+    letter-spacing: 0.2px;
+}
+
+.tb-brand-sub {
+    font-family: "Science Gothic Regular", sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.78);
+    margin-top: 2px;
+}
+
+.tb-catalog-wrap {
+    position: relative;
+}
+
+.tb-catalog-btn {
+    height: 46px;
+    padding: 0 16px;
+    border: none;
+    background: var(--tb-accent);
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #fff;
+    font-family: "Science Gothic Medium", sans-serif;
+    transition: 0.2s ease;
+    box-shadow: 0 10px 20px rgba(255, 111, 0, 0.28);
+}
+
+.tb-catalog-btn:hover {
+    background: #ef6500;
+    transform: translateY(-1px);
+}
+
+.tb-catalog-btn svg:last-child {
+    transition: transform 0.2s ease;
+}
+
+.tb-catalog-btn svg.rotated {
+    transform: rotate(180deg);
+}
+
+.tb-catalog-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 280px;
+    background: #fff;
+    border: 1px solid rgba(33, 33, 33, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.12);
+    padding: 10px;
+}
+
+.tb-catalog-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--tb-text);
+    font-family: "Science Gothic Regular", sans-serif;
+    transition: 0.2s ease;
+}
+
+.tb-catalog-item:hover {
+    background: var(--tb-surface);
+    color: var(--tb-primary);
+}
+
+.tb-search {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.tb-search input {
+    width: 100%;
+    height: 46px;
+    border-radius: 14px;
+    border: none;
+    padding: 0 46px 0 16px;
+    outline: none;
+    min-width: 0;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-family: "Science Gothic Regular", sans-serif;
+    transition: 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.tb-search input::placeholder {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.tb-search input:focus {
+    background: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+}
+
+.tb-search svg {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.tb-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tb-link-btn,
+.tb-icon-btn {
+    height: 46px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+    font-family: "Science Gothic Medium", sans-serif;
+}
+
+.tb-link-btn {
+    padding: 0 16px;
+    background: var(--tb-accent);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(255, 111, 0, 0.28);
+}
+
+.tb-link-btn:hover {
+    background: #ef6500;
+    transform: translateY(-1px);
+}
+
+.tb-link-btn-primary {
+    background: #ff8a1f;
+}
+
+.tb-link-btn-primary:hover {
+    background: #ff7a00;
+}
+
+.tb-icon-btn {
+    width: 46px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
+
+.tb-icon-btn:hover {
+    background: rgba(255, 111, 0, 0.95);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 1200px) {
+    .tb-header-inner {
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+            'brand actions actions'
+            'catalog search search';
+    }
+
+    .tb-brand { grid-area: brand; }
+    .tb-catalog-wrap { grid-area: catalog; }
+    .tb-search { grid-area: search; }
+    .tb-actions {
+        grid-area: actions;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+    .tb-header-inner {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            'brand'
+            'catalog'
+            'search'
+            'actions';
+    }
+
+    .tb-actions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .tb-catalog-menu {
+        width: 100%;
+    }
+}

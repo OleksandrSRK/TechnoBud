@@ -1,0 +1,87 @@
+.tb-card {
+    border: 1px solid rgba(33, 33, 33, 0.08);
+    border-radius: 22px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.tb-card-image {
+    height: 180px;
+    padding: 18px;
+}
+
+.tb-image-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(30, 136, 229, 0.10), rgba(255, 255, 255, 0.95));
+    display: grid;
+    place-items: center;
+    color: #1E88E5;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px;
+}
+
+.tb-card-body {
+    padding: 16px;
+}
+
+.tb-card-title {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.4;
+    min-height: 44px;
+}
+
+.tb-rating {
+    margin: 10px 0;
+    color: #666;
+    font-size: 13px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.tb-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tb-price {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.tb-old-price {
+    color: #8c8c8c;
+    text-decoration: line-through;
+    font-size: 14px;
+}
+
+.tb-card-footer {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+}
+
+.tb-buy-btn {
+    flex: 1;
+    height: 42px;
+    border: none;
+    background: #1E88E5;
+    color: #fff;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.tb-fav-btn {
+    width: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(33, 33, 33, 0.08);
+    background: #fff;
+    cursor: pointer;
+}
