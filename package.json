@@ -7,7 +7,7 @@
     "dev": "ts-node-dev --project tsconfig.json src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx --yes prisma generate"
   },
   "keywords": [],
   "author": "",
