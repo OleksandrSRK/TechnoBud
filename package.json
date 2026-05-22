@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --project tsconfig.json src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "postinstall": "npx --yes prisma generate"
+    "build": "npx prisma generate && tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
