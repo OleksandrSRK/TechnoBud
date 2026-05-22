@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npx prisma generate",
     "dev": "ts-node-dev --project tsconfig.json src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
