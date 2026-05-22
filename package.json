@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --project tsconfig.json src/server.ts",
-    "build:frontend": "tsc -p tsconfig.frontend.json",
-    "watch:frontend": "tsc -p tsconfig.frontend.json -w"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
