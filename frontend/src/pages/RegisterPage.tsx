@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import RegistrationFormUI from '../components/auth/RegistrationFormUI'
-import '../components/auth/RegistrationFormUI.css'
+import '../components/auth/RegistrationLoginFormUI.css'
 
 type Props = {
     setIsLoggedIn: (value: boolean) => void

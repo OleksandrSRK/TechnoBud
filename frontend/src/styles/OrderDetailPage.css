@@ -1,0 +1,205 @@
+.order-detail-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+    color: #212121;
+}
+.order-detail-main {
+    width: min(1000px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 30px 0 40px;
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #1e88e5;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.order-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+.order-status {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+.status-pending { background: #fff3e0; color: #e65100; }
+.status-confirmed { background: #e8f5e9; color: #2e7d32; }
+.status-processing { background: #e3f2fd; color: #1565c0; }
+.status-shipped { background: #f3e5f5; color: #6a1b9a; }
+.status-delivered { background: #e8f5e9; color: #1b5e20; }
+.status-canceled { background: #ffebee; color: #c62828; }
+
+.order-progress {
+    display: flex;
+    gap: 0;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    justify-content: space-around;
+}
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.4;
+    position: relative;
+    flex: 1;
+}
+.progress-step.active {
+    opacity: 1;
+}
+.progress-step.canceled.active .step-circle {
+    background: #c62828;
+}
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ccc;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.progress-step.active .step-circle {
+    background: #1e88e5;
+}
+.step-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+}
+
+.order-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.detail-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.detail-card h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.detail-card p {
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+.summary-row.total {
+    font-weight: 800;
+    font-size: 18px;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.order-items {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.order-items h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+.order-item-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+.order-item-row:last-child {
+    border-bottom: none;
+}
+.order-item-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    background: #fafafa;
+    border-radius: 10px;
+}
+.order-item-info {
+    flex: 1;
+}
+.order-item-name {
+    font-weight: 600;
+    font-size: 16px;
+}
+.order-item-brand {
+    color: #666;
+    font-size: 13px;
+}
+.order-item-price {
+    font-size: 14px;
+    color: #555;
+    margin-top: 4px;
+}
+.order-item-total {
+    font-weight: 700;
+    font-size: 18px;
+    color: #e53935;
+}
+
+.order-notes {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.order-notes h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+.order-notes p {
+    margin: 0;
+    color: #555;
+}
+
+.order-detail-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh;
+    color: #666;
+}

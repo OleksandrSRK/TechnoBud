@@ -72,8 +72,10 @@ export default function RegistrationFormUI({ onSuccess }: Props) {
             }
 
             localStorage.setItem('token', data.token)
+            localStorage.setItem('user', JSON.stringify(data.user))
+            localStorage.setItem('role', data.user.role)
 
-            if (onSuccess) onSuccess()
+            onSuccess?.()
         } catch (err: any) {
             setError(err.message || 'Something went wrong')
         } finally {

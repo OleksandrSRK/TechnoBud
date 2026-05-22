@@ -1,0 +1,102 @@
+.order-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+    color: #212121;
+}
+.order-main {
+    width: min(800px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 30px 0 40px;
+}
+.order-main h2 {
+    margin-bottom: 24px;
+    font-size: 28px;
+    font-weight: 800;
+}
+.order-form {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.order-section h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.field-group label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+}
+.field-group input,
+.field-group select,
+.field-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.field-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    margin: 8px 0;
+}
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.new-address-fields {
+    display: flex;
+    flex-direction: column;
+}
+
+.order-submit-btn {
+    padding: 14px 36px;
+    background: #1e88e5;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: flex-start;
+}
+.order-submit-btn:hover { background: #1565c0; }
+.order-submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+.back-to-saved-btn {
+    background: none;
+    border: none;
+    color: #1e88e5;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 0;
+    font-size: 14px;
+    text-decoration: underline;
+    align-self: flex-start;
+}

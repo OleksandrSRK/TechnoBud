@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma';
 import { prisma } from '../prisma';
 
 const router = Router();
@@ -73,9 +73,6 @@ function authRequired(
     }
 }
 
-/**
- * REGISTER
- */
 router.post('/register', async (req: Request, res: Response) => {
     try {
         const { email, password, fullName, phone } = req.body;
@@ -139,7 +136,7 @@ router.post('/register', async (req: Request, res: Response) => {
                 role: user.role,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
 
         if (
@@ -157,9 +154,6 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 });
 
-/**
- * LOGIN
- */
 router.post('/login', async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
@@ -221,9 +215,6 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-/**
- * CURRENT USER
- */
 router.get(
     '/me',
     authRequired,
@@ -263,6 +254,39 @@ router.get(
             return res.status(500).json({
                 message: 'Failed to load profile',
             });
+        }
+    }
+);
+
+router.put(
+    '/me',
+    authRequired,
+    async (req: AuthRequest, res: Response) => {
+        try {
+            if (!req.userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+
+            const { fullName, phone } = req.body;
+
+            const updated = await prisma.user.update({
+                where: { id: req.userId },
+                data: {
+                    ...(fullName !== undefined && { fullName }),
+                    ...(phone !== undefined && { phone }),
+                },
+            });
+
+            return res.json({
+                id: updated.id,
+                email: updated.email,
+                fullName: updated.fullName,
+                phone: updated.phone,
+                role: updated.role,
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: 'Failed to update profile' });
         }
     }
 );

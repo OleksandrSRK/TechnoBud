@@ -5,11 +5,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
+  engineType = "library"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -65,6 +66,7 @@ model Brand {
   id          Int       @id @default(autoincrement())
   name        String
   slug        String    @unique
+  websiteUrl   String?
   logoUrl     String?
   description String?   @db.Text
   isActive    Boolean   @default(true)
@@ -335,10 +337,13 @@ model Review {
   productId   Int
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  parentId    Int?
+  parent      Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Review[] @relation("ReviewReplies")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, productId])
   @@index([productId])
   @@index([userId])
   @@index([rating])

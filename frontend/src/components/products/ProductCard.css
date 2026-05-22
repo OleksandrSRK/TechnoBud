@@ -1,87 +1,285 @@
 .tb-card {
-    border: 1px solid rgba(33, 33, 33, 0.08);
-    border-radius: 22px;
-    overflow: hidden;
     background: #fff;
+    border-radius: 20px;
+    border: 1px solid rgba(33, 33, 33, 0.08);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.tb-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
 .tb-card-image {
-    height: 180px;
-    padding: 18px;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #fafafa;
+    overflow: hidden;
+}
+
+.tb-card-photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    display: block;
+    padding: 5%;
+    z-index: 1;
 }
 
 .tb-image-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+    background: #f0f0f0;
+}
+
+.tb-card-chip {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 10px;
+    z-index: 3;
+}
+
+.tb-img-nav-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    border-radius: 18px;
-    background: linear-gradient(135deg, rgba(30, 136, 229, 0.10), rgba(255, 255, 255, 0.95));
-    display: grid;
-    place-items: center;
-    color: #1E88E5;
-    font-weight: 700;
-    text-align: center;
-    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.tb-card-image:hover .tb-img-nav-overlay {
+    opacity: 1;
+}
+
+.tb-img-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    pointer-events: auto;
+    transition: background 0.2s;
+    padding: 6px;
+}
+
+.tb-img-nav:hover {
+    background: #fff;
+}
+
+.tb-img-nav-left {
+    left: 10px;
+}
+
+.tb-img-nav-right {
+    right: 10px;
+}
+
+.tb-img-nav svg {
+    width: 20px;
+    height: 20px;
+    stroke: #333;
+    stroke-width: 2;
+    fill: none;
+    display: block;
+}
+
+.tb-img-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.tb-img-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: none;
+    background: #bbb;
+    cursor: pointer;
+    transition: background 0.2s;
+    padding: 0;
+    outline: none;
+}
+
+.tb-img-dot.active {
+    background: #1565c0;
 }
 
 .tb-card-body {
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .tb-card-title {
-    margin: 0;
     font-size: 16px;
-    line-height: 1.4;
-    min-height: 44px;
+    font-weight: 700;
+    color: #212121;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tb-brand-line {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
 }
 
 .tb-rating {
-    margin: 10px 0;
-    color: #666;
-    font-size: 13px;
     display: flex;
-    gap: 6px;
     align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: #ff8f00;
+    font-weight: 600;
 }
 
 .tb-prices {
     display: flex;
     align-items: baseline;
-    gap: 10px;
     flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
 }
 
 .tb-price {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
+    color: #e53935;
+}
+
+.tb-price--muted {
+    color: #999;
 }
 
 .tb-old-price {
-    color: #8c8c8c;
-    text-decoration: line-through;
     font-size: 14px;
+    font-weight: 500;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.tb-discount-badge {
+    background: #f44336;
+    color: #fff;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.tb-card-image--out::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.30);
+    backdrop-filter: grayscale(100%);
+    z-index: 1;
 }
 
 .tb-card-footer {
-    margin-top: 14px;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
 }
 
 .tb-buy-btn {
     flex: 1;
-    height: 42px;
+    padding: 12px 0;
     border: none;
-    background: #1E88E5;
-    color: #fff;
     border-radius: 14px;
-    cursor: pointer;
+    background: #1e88e5;
+    color: #fff;
+    font-size: 15px;
     font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-right: 8px;
+}
+
+.tb-buy-btn:hover {
+    background: #1565c0;
 }
 
 .tb-fav-btn {
-    width: 42px;
+    background: none;
+    border: 1px solid #ddd;
     border-radius: 14px;
-    border: 1px solid rgba(33, 33, 33, 0.08);
-    background: #fff;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    color: #999;
+    transition: background 0.2s, color 0.2s;
+}
+
+.tb-fav-btn:hover {
+    background: #ffebee;
+    color: #e53935;
+    border-color: #e53935;
+}
+
+.tb-out-of-stock {
+    flex: 1;
+    padding: 12px 0;
+    background: #f0f0f0;
+    color: #999;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 14px;
+    margin-right: 8px;
+}
+
+.tb-fav-btn--active {
+    border-color: #e53935;
+    background: #ffebee;
 }
