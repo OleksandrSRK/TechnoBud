@@ -113,7 +113,7 @@ export default function Header({
         const loadCatalogData = async () => {
             try {
                 const [categoriesRes, brandsRes] = await Promise.all([
-                    fetch(`${API_BASE}categories`),
+                    fetch(`${API_BASE}/categories`),
                     fetch(`${API_BASE}/brands`),
                 ])
                 const categoriesData = await categoriesRes.json()
