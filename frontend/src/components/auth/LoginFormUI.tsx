@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { API_BASE } from '../../api'
 
 type Props = {
     onSuccess?: () => void
@@ -36,7 +37,7 @@ export default function LoginFormUI({ onSuccess }: Props) {
         setLoading(true)
 
         try {
-            const res = await fetch('http://localhost:3000/auth/login', {
+            const res = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

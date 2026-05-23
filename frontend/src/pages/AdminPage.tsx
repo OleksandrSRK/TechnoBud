@@ -15,8 +15,9 @@ import UserForm from '../components/admin/forms/UserForm'
 import ProductForm from '../components/admin/forms/ProductForm'
 import CategoryForm from '../components/admin/forms/CategoryForm'
 import BrandForm from '../components/admin/forms/BrandForm'
+import { API_BASE } from '../api'
 
-const API = 'http://localhost:3000'
+const API = API_BASE
 
 export default function AdminPage() {
     const navigate = useNavigate()

@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Heart, ShoppingCart, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import '../styles/ProductPage.css'
+import { API_BASE } from '../api'
 
-const API = 'http://localhost:3000'
+const API = API_BASE
 
 type ProductData = {
     id: number

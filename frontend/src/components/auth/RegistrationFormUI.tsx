@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { API_BASE } from '../../api'
 
 type Props = {
     onSuccess?: () => void
@@ -52,7 +53,7 @@ export default function RegistrationFormUI({ onSuccess }: Props) {
         setLoading(true)
 
         try {
-            const res = await fetch('http://localhost:3000/auth/register', {
+            const res = await fetch(`${API_BASE}/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

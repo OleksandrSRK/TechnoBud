@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE } from '../../api'
 import {
     ChevronDown,
     Heart,
@@ -62,7 +63,7 @@ export default function Header({
             return
         }
         try {
-            const res = await fetch('http://localhost:3000/wishlist', {
+            const res = await fetch(`${API_BASE}/wishlist`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             if (res.ok) {
@@ -79,7 +80,7 @@ export default function Header({
             return
         }
         try {
-            const res = await fetch('http://localhost:3000/cart', {
+            const res = await fetch(`${API_BASE}/cart`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             if (res.ok) {
@@ -112,8 +113,8 @@ export default function Header({
         const loadCatalogData = async () => {
             try {
                 const [categoriesRes, brandsRes] = await Promise.all([
-                    fetch('http://localhost:3000/categories'),
-                    fetch('http://localhost:3000/brands'),
+                    fetch(`${API_BASE}categories`),
+                    fetch(`${API_BASE}/brands`),
                 ])
                 const categoriesData = await categoriesRes.json()
                 const brandsData = await brandsRes.json()

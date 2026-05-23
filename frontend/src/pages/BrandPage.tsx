@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import ProductCard from '../components/products/ProductCard'
 import '../styles/BrandPage.css'
+import { API_BASE } from '../api'
 
-const API = 'http://localhost:3000'
+const API = API_BASE
 
 type BrandData = {
     id: number

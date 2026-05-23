@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/ProfilePageStyles.css'
+import { API_BASE } from '../api'
 
 type UserData = {
     id: number
@@ -59,7 +60,7 @@ export default function ProfilePage({ isLoggedIn, setIsLoggedIn }: ProfilePagePr
         setError(null)
 
         try {
-            const res = await fetch(`http://localhost:3000/auth/me`, {
+            const res = await fetch(`${API_BASE}/auth/me`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

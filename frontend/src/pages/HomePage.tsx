@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductCard from '../components/products/ProductCard'
 import '../styles/HomePageStyles.css'
+import { API_BASE } from '../api'
 
 type ApiProductImage = {
     id: number
@@ -114,7 +115,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         const token = localStorage.getItem('token')
         if (!token) return
         try {
-            const res = await fetch('http://localhost:3000/wishlist', {
+            const res = await fetch(`${API_BASE}/wishlist`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             if (res.ok) {
@@ -130,7 +131,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         const loadProducts = async () => {
             try {
                 setError(null)
-                const res = await fetch('http://localhost:3000/products')
+                const res = await fetch(`${API_BASE}/products`)
                 if (!res.ok) {
                     const errorData = await res.json().catch(() => null)
                     throw new Error(
@@ -198,7 +199,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         if (!token) return
         const method = wishlistIds.includes(productId) ? 'DELETE' : 'POST'
         try {
-            const res = await fetch(`http://localhost:3000/wishlist/${productId}`, {
+            const res = await fetch(`${API_BASE}/wishlist/${productId}`, {
                 method,
                 headers: { Authorization: `Bearer ${token}` },
             })

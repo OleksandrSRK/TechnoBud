@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Heart, Star } from 'lucide-react'
 import './ProductCard.css'
+import { API_BASE } from '../../api'
 
 type ProductImage = {
     id?: number
@@ -96,7 +97,7 @@ export default function ProductCard({ product, isWishlisted = false, onToggleWis
             return
         }
         try {
-            await fetch(`http://localhost:3000/cart/${product.id}`, {
+            await fetch(`${API_BASE}/cart/${product.id}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantity: 1 }),

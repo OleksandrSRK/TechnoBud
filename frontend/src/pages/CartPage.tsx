@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Trash2 } from 'lucide-react'
 import '../styles/CartPage.css'
+import { API_BASE } from '../api'
 
-const API = 'http://localhost:3000'
+const API = API_BASE
 
 type CartItem = {
     cartItemId: number

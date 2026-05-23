@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../generated/prisma/client'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import fs from 'fs'
 import path from 'path'
@@ -19,7 +19,6 @@ import addressesRoutes from './routes/addresses.routes'
 
 console.log('[DEBUG] Starting Prisma configuration...')
 
-// Строка подключения к TiDB (Render) или локальной MariaDB
 const dbUrl = new URL(process.env.DATABASE_URL!)
 const caCertPath = path.join(process.cwd(), 'prisma', 'ca.pem')
 let caCert: Buffer | undefined
@@ -52,14 +51,12 @@ try {
     process.exit(1)
 }
 
-// Сохраняем инстанс для глобального использования (опционально)
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 export const prisma = globalForPrisma.prisma ?? prismaInstance
 if (process.env.NODE_ENV !== 'production') {
     globalForPrisma.prisma = prisma
 }
 
-// ---------- Express приложение ----------
 const app = express()
 const PORT = process.env.PORT || 3000
 
@@ -71,7 +68,6 @@ app.use((req, _res, next) => {
     next()
 })
 
-// Подключаем роуты
 app.use('/auth', authRouter)
 app.use('/products', productsRoutes)
 app.use('/categories', categoriesRoutes)
@@ -91,7 +87,6 @@ app.use((_req, res) => {
     res.status(404).json({ message: 'Route not found' })
 })
 
-// Запуск сервера
 async function bootstrap() {
     try {
         console.log('[BOOT] Server starting...')

@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Package, MapPin, Phone, Mail, User } from 'lucide-react'
 import '../styles/OrderDetailPage.css'
+import { API_BASE } from '../api'
 
-const API = 'http://localhost:3000'
+const API = API_BASE
 
 type OrderData = {
     id: number
