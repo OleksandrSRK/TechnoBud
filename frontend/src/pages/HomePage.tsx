@@ -109,11 +109,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [inStockOnly, setInStockOnly] = useState(false)
     const [sortBy, setSortBy] = useState('default')
 
-    // Wishlist
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
-
-    // Notification
-    const [notification, setNotification] = useState<string | null>(null)
 
     const loadWishlist = async () => {
         const token = localStorage.getItem('token')
@@ -200,10 +196,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
-        if (!token) {
-            setNotification('Please log in to add items to your wishlist.')
-            return
-        }
+        if (!token) return
         const method = wishlistIds.includes(productId) ? 'DELETE' : 'POST'
         try {
             const res = await fetch(`${API_BASE}/wishlist/${productId}`, {
@@ -221,7 +214,6 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             }
         } catch (err) {
             console.error('Wishlist toggle error', err)
-            setNotification('Failed to update wishlist.')
         }
     }
 
@@ -391,12 +383,6 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
     return (
         <div className="home-page">
-            {notification && (
-                <div className="home-notification" onClick={() => setNotification(null)}>
-                    <span>{notification}</span>
-                    <button className="home-notification-close">✕</button>
-                </div>
-            )}
             <main className="home-main">
                 <section className="home-banner">
                     <div className="home-banner-content">
@@ -587,6 +573,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                                         product={product}
                                         isWishlisted={wishlistIds.includes(product.id)}
                                         onToggleWishlist={handleToggleWishlist}
+
                                     />
                                 ))}
                             </div>

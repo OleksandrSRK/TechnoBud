@@ -35,6 +35,8 @@ export default function ProductCard({ product, isWishlisted = false, onToggleWis
     const navigate = useNavigate()
     const token = localStorage.getItem('token')
 
+    const [notification, setNotification] = useState<string | null>(null)
+
     const currentUser = useMemo(() => {
         try {
             return JSON.parse(localStorage.getItem('user') || 'null') as { id: number; role: 'CUSTOMER' | 'ADMIN' } | null
@@ -81,7 +83,7 @@ export default function ProductCard({ product, isWishlisted = false, onToggleWis
         e.stopPropagation()
         if (isAdmin) return
         if (!token) {
-            alert('Please log in to add items to your wishlist.')
+            setNotification('Please log in to add items to your wishlist.')
             return
         }
         if (onToggleWishlist) {
@@ -93,7 +95,7 @@ export default function ProductCard({ product, isWishlisted = false, onToggleWis
         e.stopPropagation()
         if (isAdmin) return
         if (!token) {
-            alert('Please log in to add items to cart.')
+            setNotification('Please log in to add items to cart.')
             return
         }
         try {
@@ -103,15 +105,25 @@ export default function ProductCard({ product, isWishlisted = false, onToggleWis
                 body: JSON.stringify({ quantity: 1 }),
             })
             window.dispatchEvent(new Event('cartUpdated'))
-        } catch {}
+            setNotification('Added to cart!')
+        } catch {
+            setNotification('Failed to add to cart')
+        }
     }
 
     return (
         <article
             className="tb-card"
             onClick={() => navigate(`/product/${product.id}`)}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', position: 'relative' }}
         >
+            {notification && (
+                <div className="tb-card-notification" onClick={(e) => { e.stopPropagation(); setNotification(null); }}>
+                    <span>{notification}</span>
+                    <button className="tb-card-notification-close" onClick={(e) => { e.stopPropagation(); setNotification(null); }}>✕</button>
+                </div>
+            )}
+
             <div className={`tb-card-image ${!isInStock ? 'tb-card-image--out' : ''}`}>
                 {product.category && <div className="tb-card-chip">{product.category}</div>}
 
