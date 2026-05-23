@@ -11,14 +11,14 @@ const caCert = fs.readFileSync(caCertPath)
 
 const adapter = new PrismaMariaDb({
     host: dbUrl.hostname,
-    port: Number(dbUrl.port || 3306),
+    port: Number(dbUrl.port || 4000),
     user: dbUrl.username,
     password: dbUrl.password,
     database: dbUrl.pathname.slice(1),
-    connectionLimit: 10,
     ssl: {
         ca: caCert
-    }
+    },
+    connectionLimit: 10,
 })
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
