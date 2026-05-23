@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Trash2 } from 'lucide-react'
+import { ChevronLeft, Trash2, AlertCircle } from 'lucide-react'
 import '../styles/CartPage.css'
 import { API_BASE } from '../api'
 
@@ -16,6 +16,7 @@ export default function CartPage() {
     const navigate = useNavigate()
     const [items, setItems] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [stockError, setStockError] = useState<string | null>(null)
     const token = localStorage.getItem('token')
 
     const loadCart = async () => {
@@ -44,15 +45,19 @@ export default function CartPage() {
 
     const handleUpdateQuantity = async (itemId: number, quantity: number) => {
         if (quantity < 1) return
-        await fetch(`${API}/cart/${itemId}`, {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ quantity }),
-        })
         setItems(prev => prev.map(item =>
             item.cartItemId === itemId ? { ...item, quantity } : item
         ))
-        window.dispatchEvent(new Event('cartUpdated'))
+        try {
+            await fetch(`${API}/cart/${itemId}`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity }),
+            })
+            window.dispatchEvent(new Event('cartUpdated'))
+        } catch {
+        }
+        setStockError(null)
     }
 
     const handleRemove = async (itemId: number) => {
@@ -62,6 +67,24 @@ export default function CartPage() {
         })
         setItems(prev => prev.filter(item => item.cartItemId !== itemId))
         window.dispatchEvent(new Event('cartUpdated'))
+        setStockError(null)
+    }
+
+    const handleOrder = () => {
+        const outOfStock: string[] = []
+        for (const item of items) {
+            if (item.product.stock < item.quantity) {
+                outOfStock.push(
+                    `${item.product.name} (requested: ${item.quantity}, available: ${item.product.stock})`
+                )
+            }
+        }
+        if (outOfStock.length > 0) {
+            setStockError(`Not enough stock:\n${outOfStock.join('\n')}`)
+            return
+        }
+        setStockError(null)
+        navigate('/order')
     }
 
     const total = items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0)
@@ -82,6 +105,13 @@ export default function CartPage() {
                     <p className="cart-empty">Your cart is empty.</p>
                 ) : (
                     <div className="cart-content">
+                        {stockError && (
+                            <div className="cart-stock-error">
+                                <AlertCircle size={18} />
+                                <span>{stockError}</span>
+                            </div>
+                        )}
+
                         <div className="cart-items">
                             {items.map(item => (
                                 <div key={item.cartItemId} className="cart-item">
@@ -93,6 +123,11 @@ export default function CartPage() {
                                     <div className="cart-item-info">
                                         <h3>{item.product.name}</h3>
                                         <p>{Number(item.product.price).toLocaleString()} ₴</p>
+                                        {item.product.stock < item.quantity && (
+                                            <span className="cart-item-warning">
+                                                Only {item.product.stock} left
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="cart-item-actions">
                                         <div className="cart-quantity">
@@ -121,10 +156,7 @@ export default function CartPage() {
                             <div className="cart-total">
                                 Total: <strong>{total.toLocaleString('uk-UA')} ₴</strong>
                             </div>
-                            <button
-                                className="cart-order-btn"
-                                onClick={() => navigate('/order')}
-                            >
+                            <button className="cart-order-btn" onClick={handleOrder}>
                                 Order
                             </button>
                         </div>

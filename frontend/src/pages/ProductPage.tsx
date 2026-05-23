@@ -41,6 +41,10 @@ export default function ProductPage() {
     const [tab, setTab] = useState<'about' | 'specs' | 'reviews'>('about')
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
+    // Notifications
+    const [notification, setNotification] = useState<string | null>(null)
+
+    // Wishlist
     const [isWishlisted, setIsWishlisted] = useState(false)
     const token = localStorage.getItem('token')
 
@@ -68,7 +72,10 @@ export default function ProductPage() {
 
     const handleToggleWishlist = async () => {
         if (isAdmin) return
-        if (!token) return alert('Please log in to add items to your wishlist.')
+        if (!token) {
+            setNotification('Please log in to add items to your wishlist.')
+            return
+        }
         const method = isWishlisted ? 'DELETE' : 'POST'
         try {
             const res = await fetch(`${API}/wishlist/${id}`, {
@@ -85,11 +92,11 @@ export default function ProductPage() {
     const handleAddToCart = async () => {
         if (isAdmin) return
         if (!token) {
-            alert('Please log in to add items to cart.')
+            setNotification('Please log in to add items to cart.')
             return
         }
         try {
-            await fetch(`${API}/cart/${id}`, {
+            const res = await fetch(`${API}/cart/${id}`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -97,9 +104,15 @@ export default function ProductPage() {
                 },
                 body: JSON.stringify({ quantity: 1 }),
             })
-            window.dispatchEvent(new Event('cartUpdated'))
+            if (res.ok) {
+                window.dispatchEvent(new Event('cartUpdated'))
+                setNotification('Added to cart!')
+            } else {
+                const data = await res.json().catch(() => ({ message: 'Failed' }))
+                setNotification(data.message || 'Failed to add to cart')
+            }
         } catch {
-            alert('Failed to add to cart')
+            setNotification('Failed to add to cart')
         }
     }
 
@@ -124,6 +137,7 @@ export default function ProductPage() {
         if (!isAdmin) checkWishlist()
     }, [id])
 
+    // Reviews
     const [reviews, setReviews] = useState<any[]>([])
     const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '', parentId: null as number | null })
     const [submitting, setSubmitting] = useState(false)
@@ -153,7 +167,10 @@ export default function ProductPage() {
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!token) return alert('Please log in to leave a review')
+        if (!token) {
+            setNotification('Please log in to leave a review')
+            return
+        }
         setSubmitting(true)
         try {
             const res = await fetch(`${API}/reviews/${id}`, {
@@ -167,12 +184,14 @@ export default function ProductPage() {
             if (res.ok) {
                 setReviewForm({ rating: 5, title: '', comment: '', parentId: null })
                 loadReviews()
+                setNotification('Review submitted!')
             } else {
                 const data = await res.json()
-                alert(data.message || 'Failed to submit review')
+                setNotification(data.message || 'Failed to submit review')
             }
         } catch (err) {
             console.error(err)
+            setNotification('An error occurred')
         } finally {
             setSubmitting(false)
         }
@@ -213,6 +232,12 @@ export default function ProductPage() {
 
     return (
         <div className="product-page">
+            {notification && (
+                <div className="product-notification" onClick={() => setNotification(null)}>
+                    <span>{notification}</span>
+                    <button className="product-notification-close">✕</button>
+                </div>
+            )}
             <main className="product-main">
                 <button className="product-back-btn" onClick={() => navigate(-1)}>
                     <ChevronLeft size={18} /> Back

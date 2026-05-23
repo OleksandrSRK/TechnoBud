@@ -10,7 +10,6 @@
     padding: 20px 0 40px;
 }
 
-/* Banner */
 .brand-banner {
     border-radius: 28px;
     overflow: hidden;
@@ -64,7 +63,6 @@
     background: rgba(255,255,255,0.3);
 }
 
-/* Category pills */
 .brand-categories {
     display: flex;
     flex-wrap: wrap;
@@ -93,7 +91,6 @@
     background: #e8e8e8;
 }
 
-/* Toolbar */
 .brand-toolbar {
     display: flex;
     justify-content: space-between;
@@ -125,7 +122,6 @@
     outline: none;
 }
 
-/* Products grid */
 .brand-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -138,7 +134,6 @@
     padding: 40px;
 }
 
-/* Loading & error */
 .brand-page-loading {
     display: flex;
     justify-content: center;
@@ -189,4 +184,29 @@
 }
 .brand-grid--small .tb-card-image {
     aspect-ratio: 1 / 1;
+}
+
+.brand-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fd891f;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-weight: 600;
+    z-index: 1000;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+.brand-notification-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
 }

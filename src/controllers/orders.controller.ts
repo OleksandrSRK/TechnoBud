@@ -4,7 +4,6 @@ import { prisma } from '../prisma'
 export const getMyOrders = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId
-
         const orders = await prisma.order.findMany({
             where: { userId },
             include: {
@@ -20,7 +19,6 @@ export const getMyOrders = async (req: Request, res: Response) => {
             },
             orderBy: { createdAt: 'desc' },
         })
-
         res.json(orders)
     } catch (e) {
         console.error('[getMyOrders]', e)
@@ -45,7 +43,6 @@ export const getAllOrders = async (_req: Request, res: Response) => {
             },
             orderBy: { createdAt: 'desc' },
         })
-
         res.json(orders)
     } catch (e) {
         console.error('[getAllOrders]', e)
@@ -57,12 +54,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     try {
         const orderId = Number(req.params.id)
         const { status } = req.body
-
         const order = await prisma.order.update({
             where: { id: orderId },
             data: { status },
         })
-
         res.json(order)
     } catch (e) {
         console.error('[updateOrderStatus]', e)
@@ -75,7 +70,6 @@ export const createOrder = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Auth required' })
 
     const { customerName, customerPhone, customerEmail, shippingAddress, notes } = req.body
-
     if (!customerName || !customerPhone || !customerEmail || !shippingAddress) {
         return res.status(400).json({ message: 'All contact and address fields are required' })
     }
@@ -100,12 +94,19 @@ export const createOrder = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Cart is empty' })
         }
 
+        for (const item of cart.items) {
+            if (item.product.stock < item.quantity) {
+                return res.status(400).json({
+                    message: `Not enough stock for "${item.product.name}". Requested: ${item.quantity}, Available: ${item.product.stock}`
+                })
+            }
+        }
+
         const subtotal = cart.items.reduce(
             (sum: number, item: any) => sum + Number(item.product.price) * item.quantity,
             0
         )
         const totalAmount = subtotal
-
         const orderNumber = `ORD-${Date.now()}-${userId}`
 
         const order = await prisma.order.create({
@@ -136,6 +137,16 @@ export const createOrder = async (req: Request, res: Response) => {
                 items: true,
             },
         })
+
+        for (const item of cart.items) {
+            await prisma.product.update({
+                where: { id: item.productId },
+                data: {
+                    stock: { decrement: item.quantity },
+                    reservedStock: { increment: item.quantity },
+                },
+            })
+        }
 
         await prisma.cartItem.deleteMany({ where: { cartId: cart.id } })
         await prisma.cart.update({ where: { id: cart.id }, data: { status: 'CONVERTED' } })
@@ -186,4 +197,3 @@ export const getOrderById = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' })
     }
 }
-
