@@ -42,7 +42,7 @@ export const getCart = async (req: Request, res: Response) => {
             })
         }
 
-        const items = cart.items.map(item => ({
+        const items = cart.items.map((item: any) => ({
             cartItemId: item.id,
             product: item.product,
             quantity: item.quantity,

@@ -42,7 +42,7 @@ export const getWishlist = async (req: Request, res: Response) => {
             })
         }
 
-        const products = wishlist.items.map(item => ({
+        const products = wishlist.items.map((item: any) => ({
             ...item.product,
             wishlistItemId: item.id,
         }))

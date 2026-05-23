@@ -101,7 +101,7 @@ export const createOrder = async (req: Request, res: Response) => {
         }
 
         const subtotal = cart.items.reduce(
-            (sum, item) => sum + Number(item.product.price) * item.quantity,
+            (sum: number, item: any) => sum + Number(item.product.price) * item.quantity,
             0
         )
         const totalAmount = subtotal
@@ -121,7 +121,7 @@ export const createOrder = async (req: Request, res: Response) => {
                 userId,
                 status: 'PENDING',
                 items: {
-                    create: cart.items.map(item => ({
+                    create: cart.items.map((item: any) => ({
                         quantity: item.quantity,
                         unitPrice: item.product.price,
                         totalPrice: Number(item.product.price) * item.quantity,
