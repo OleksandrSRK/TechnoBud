@@ -168,7 +168,7 @@ model product {
   powerW               Int?
   reservedStock        Int                    @default(0)
   reviewCount          Int                    @default(0)
-  shortDescription     String?
+  shortDescription     String?                @db.Text
   sku                  String                 @unique(map: "Product_sku_key")
   slug                 String                 @unique(map: "Product_slug_key")
   warrantyMonths       Int?
