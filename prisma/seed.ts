@@ -1,3 +1,4 @@
+/*
 import { PrismaClient, Prisma } from '../generated/prisma';
 
 const prisma = new PrismaClient();
@@ -9,7 +10,7 @@ const brandsData = [
         slug: 'lg',
         websiteUrl: 'https://www.lg.com/',
         logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/LG_symbol.svg/960px-LG_symbol.svg.png',
-        description: 'Global developer of home appliances and consumer electronics.',
+        description: 'LG is a global leader in home appliances and electronics, recognized for innovative microwave solutions that combine modern design, advanced technology, and reliable performance. From compact countertop models to powerful over-the-range microwaves, LG offers features like smart inverter technology, sensor cooking, easy-clean interiors, and Wi-Fi connectivity for convenient everyday use. With a focus on efficiency, precision heating, and sleek aesthetics, LG microwaves bring comfort and style to every kitchen.',
         isActive: true
     },
 ];
@@ -19,7 +20,7 @@ const categoriesData = [
         id: 1,
         name: 'Microwave Ovens',
         slug: 'microwave-ovens',
-        description: 'Solo, grill, and convection microwave ovens for your kitchen.',
+        description: 'Microwave ovens are an essential part of every modern kitchen, offering fast, convenient, and efficient cooking for everyday meals. In our online home appliance store, you’ll find a wide selection of countertop, built-in, and over-the-range microwave ovens from leading brands, designed to suit every lifestyle and kitchen style. With advanced features such as sensor cooking, grill functions, inverter technology, and easy-clean interiors, modern microwaves provide reliable performance, energy efficiency, and effortless meal preparation.',
         imageUrl: 'https://pngimg.com/uploads/microwave/microwave_PNG15732.png',
         isActive: true
     }
@@ -149,4 +150,4 @@ main()
     })
     .finally(async () => {
         await prisma.$disconnect();
-    });
+    });*/
