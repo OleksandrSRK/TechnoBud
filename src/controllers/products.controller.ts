@@ -93,17 +93,29 @@ export const getAllProducts = async (_req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { images, ...data } = req.body
+        const { images, ...data } = req.body;
+
+        const numericFields: Record<string, any> = {
+            price: Number(data.price),
+            stock: Number(data.stock) || 0,
+            categoryId: Number(data.categoryId),
+            brandId: Number(data.brandId),
+            oldPrice: data.oldPrice != null ? Number(data.oldPrice) : undefined,
+            warrantyMonths: data.warrantyMonths != null ? Number(data.warrantyMonths) : undefined,
+            powerW: data.powerW != null ? Number(data.powerW) : undefined,
+            weightKg: data.weightKg != null ? Number(data.weightKg) : undefined,
+        };
+
+        const productData = {
+            ...data,
+            ...numericFields,
+            description: data.description || '',
+        };
+
         const product = await prisma.product.create({
-            data: {
-                ...data,
-                description: data.description || '',
-                price: Number(data.price),
-                stock: Number(data.stock) || 0,
-                categoryId: Number(data.categoryId),
-                brandId: Number(data.brandId),
-            },
-        })
+            data: productData,
+        });
+
         if (Array.isArray(images) && images.length > 0) {
             await prisma.productImage.createMany({
                 data: images.map((img: any, index: number) => ({
@@ -113,18 +125,19 @@ export const createProduct = async (req: Request, res: Response) => {
                     sortOrder: index,
                     productId: product.id,
                 })),
-            })
+            });
         }
+
         const finalProduct = await prisma.product.findUnique({
             where: { id: product.id },
             include: { images: true, category: true, brand: true },
-        })
-        return res.status(201).json(finalProduct)
+        });
+        return res.status(201).json(finalProduct);
     } catch (error: any) {
-        console.error('CREATE PRODUCT ERROR:', error)
-        return res.status(500).json({ message: 'Failed to create product' })
+        console.error('CREATE PRODUCT ERROR:', error);
+        return res.status(500).json({ message: 'Failed to create product' });
     }
-}
+};
 
 export const updateProduct = async (req: Request, res: Response) => {
     const id = Number(req.params.id)
