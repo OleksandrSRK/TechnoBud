@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import ProductCard from '../components/products/ProductCard'
 import '../styles/HomePageStyles.css'
 import { API_BASE } from '../api'
@@ -93,10 +93,15 @@ function normalizeText(value?: string | null): string {
     return (value || '').trim().toLowerCase()
 }
 
+const PAGE_SIZE = 12
+
 export default function HomePage({ search, isLoggedIn }: HomePageProps) {
-    const [products, setProducts] = useState<ViewProduct[]>([])
+    const [allProducts, setAllProducts] = useState<ViewProduct[]>([])
+    const [displayedCount, setDisplayedCount] = useState(PAGE_SIZE)
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [hasMore, setHasMore] = useState(true)
 
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [selectedBrand, setSelectedBrand] = useState('all')
@@ -110,8 +115,9 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [sortBy, setSortBy] = useState('default')
 
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-    const loadWishlist = async () => {
+    const loadWishlist = useCallback(async () => {
         const token = localStorage.getItem('token')
         if (!token) return
         try {
@@ -125,7 +131,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         } catch (err) {
             console.error('Failed to load wishlist', err)
         }
-    }
+    }, [])
 
     useEffect(() => {
         const loadProducts = async () => {
@@ -177,10 +183,10 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                         }
                     })
 
-                setProducts(mappedProducts)
+                setAllProducts(mappedProducts)
             } catch (err) {
                 console.error('Failed to load products:', err)
-                setProducts([])
+                setAllProducts([])
                 setError(err instanceof Error ? err.message : 'Failed to load products')
             } finally {
                 setLoading(false)
@@ -192,7 +198,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
     useEffect(() => {
         loadWishlist()
-    }, [isLoggedIn])
+    }, [isLoggedIn, loadWishlist])
 
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
@@ -206,167 +212,143 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             if (res.ok) {
                 if (method === 'POST') {
                     setWishlistIds(prev => [...prev, productId])
-                    window.dispatchEvent(new Event('wishlistUpdated'))
                 } else {
                     setWishlistIds(prev => prev.filter(id => id !== productId))
-                    window.dispatchEvent(new Event('wishlistUpdated'))
                 }
+                window.dispatchEvent(new Event('wishlistUpdated'))
             }
         } catch (err) {
             console.error('Wishlist toggle error', err)
         }
     }
 
-    const categories: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            if (!unique.has(product.categorySlug)) {
-                unique.set(product.categorySlug, {
-                    name: product.category,
-                    slug: product.categorySlug,
-                })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const brands: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            if (!unique.has(product.brandSlug)) {
-                unique.set(product.brandSlug, {
-                    name: product.brand,
-                    slug: product.brandSlug,
-                })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const colors: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.color)
-            if (value && !unique.has(value)) {
-                unique.set(value, {
-                    name: product.color as string,
-                    slug: value,
-                })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const materials: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.material)
-            if (value && !unique.has(value)) {
-                unique.set(value, {
-                    name: product.material as string,
-                    slug: value,
-                })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const energyClasses: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.energyClass)
-            if (value && !unique.has(value)) {
-                unique.set(value, {
-                    name: product.energyClass as string,
-                    slug: value,
-                })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
     const filteredProducts = useMemo(() => {
         const minPriceNumber = minPrice ? Number(minPrice) : null
         const maxPriceNumber = maxPrice ? Number(maxPrice) : null
         const minRatingNumber = Number(minRating)
 
-        let result = [...products]
+        let result = [...allProducts]
 
-        if (selectedCategory !== 'all') {
-            result = result.filter((product) => product.categorySlug === selectedCategory)
-        }
-        if (selectedBrand !== 'all') {
-            result = result.filter((product) => product.brandSlug === selectedBrand)
-        }
-        if (selectedColor !== 'all') {
-            result = result.filter(
-                (product) => normalizeText(product.color) === selectedColor
-            )
-        }
-        if (selectedMaterial !== 'all') {
-            result = result.filter(
-                (product) => normalizeText(product.material) === selectedMaterial
-            )
-        }
-        if (selectedEnergyClass !== 'all') {
-            result = result.filter(
-                (product) => normalizeText(product.energyClass) === selectedEnergyClass
-            )
-        }
-        if (minPriceNumber !== null && !Number.isNaN(minPriceNumber)) {
-            result = result.filter((product) => product.price >= minPriceNumber)
-        }
-        if (maxPriceNumber !== null && !Number.isNaN(maxPriceNumber)) {
-            result = result.filter((product) => product.price <= maxPriceNumber)
-        }
-        if (!Number.isNaN(minRatingNumber) && minRatingNumber > 0) {
-            result = result.filter((product) => (product.rating ?? 0) >= minRatingNumber)
-        }
-        if (inStockOnly) {
-            result = result.filter((product) => product.stock > 0)
-        }
+        if (selectedCategory !== 'all') result = result.filter(p => p.categorySlug === selectedCategory)
+        if (selectedBrand !== 'all') result = result.filter(p => p.brandSlug === selectedBrand)
+        if (selectedColor !== 'all') result = result.filter(p => normalizeText(p.color) === selectedColor)
+        if (selectedMaterial !== 'all') result = result.filter(p => normalizeText(p.material) === selectedMaterial)
+        if (selectedEnergyClass !== 'all') result = result.filter(p => normalizeText(p.energyClass) === selectedEnergyClass)
+        if (minPriceNumber !== null && !Number.isNaN(minPriceNumber)) result = result.filter(p => p.price >= minPriceNumber)
+        if (maxPriceNumber !== null && !Number.isNaN(maxPriceNumber)) result = result.filter(p => p.price <= maxPriceNumber)
+        if (!Number.isNaN(minRatingNumber) && minRatingNumber > 0) result = result.filter(p => (p.rating ?? 0) >= minRatingNumber)
+        if (inStockOnly) result = result.filter(p => p.stock > 0)
 
         if (search.trim()) {
             const q = search.trim().toLowerCase()
-            result = result.filter(product =>
-                product.name.toLowerCase().includes(q) ||
-                product.brand.toLowerCase().includes(q) ||
-                product.category.toLowerCase().includes(q)
+            result = result.filter(p =>
+                p.name.toLowerCase().includes(q) ||
+                p.brand.toLowerCase().includes(q) ||
+                p.category.toLowerCase().includes(q)
             )
         }
 
         switch (sortBy) {
-            case 'price-asc':
-                result.sort((a, b) => a.price - b.price)
-                break
-            case 'price-desc':
-                result.sort((a, b) => b.price - a.price)
-                break
-            case 'rating-desc':
-                result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-                break
-            case 'name-asc':
-                result.sort((a, b) => a.name.localeCompare(b.name))
-                break
-            default:
-                break
+            case 'price-asc': result.sort((a, b) => a.price - b.price); break
+            case 'price-desc': result.sort((a, b) => b.price - a.price); break
+            case 'rating-desc': result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)); break
+            case 'name-asc': result.sort((a, b) => a.name.localeCompare(b.name)); break
+            default: break
         }
 
         return result
-    }, [
-        products,
-        selectedCategory,
-        selectedBrand,
-        selectedColor,
-        selectedMaterial,
-        selectedEnergyClass,
-        minPrice,
-        maxPrice,
-        minRating,
-        inStockOnly,
-        sortBy,
-        search,
-    ])
+    }, [allProducts, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, minRating, inStockOnly, sortBy, search])
+
+    useEffect(() => {
+        setDisplayedCount(PAGE_SIZE)
+    }, [filteredProducts])
+
+    const visibleProducts = useMemo(() => {
+        return filteredProducts.slice(0, displayedCount)
+    }, [filteredProducts, displayedCount])
+
+    useEffect(() => {
+        setHasMore(displayedCount < filteredProducts.length)
+    }, [displayedCount, filteredProducts.length])
+
+    const loadMore = useCallback(() => {
+        if (loadingMore || !hasMore) return
+        setLoadingMore(true)
+        setTimeout(() => {
+            setDisplayedCount(prev => Math.min(prev + PAGE_SIZE, filteredProducts.length))
+            setLoadingMore(false)
+        }, 400)
+    }, [loadingMore, hasMore, filteredProducts.length])
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current
+        if (!sentinel) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loadingMore) {
+                    loadMore()
+                }
+            },
+            { rootMargin: '200px' }
+        )
+
+        observer.observe(sentinel)
+        return () => observer.disconnect()
+    }, [loadMore, hasMore, loadingMore])
+
+    const categories: FilterOption[] = useMemo(() => {
+        const unique = new Map<string, FilterOption>()
+        allProducts.forEach((product) => {
+            if (!unique.has(product.categorySlug)) {
+                unique.set(product.categorySlug, { name: product.category, slug: product.categorySlug })
+            }
+        })
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [allProducts])
+
+    const brands: FilterOption[] = useMemo(() => {
+        const unique = new Map<string, FilterOption>()
+        allProducts.forEach((product) => {
+            if (!unique.has(product.brandSlug)) {
+                unique.set(product.brandSlug, { name: product.brand, slug: product.brandSlug })
+            }
+        })
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [allProducts])
+
+    const colors: FilterOption[] = useMemo(() => {
+        const unique = new Map<string, FilterOption>()
+        allProducts.forEach((product) => {
+            const value = normalizeText(product.color)
+            if (value && !unique.has(value)) {
+                unique.set(value, { name: product.color as string, slug: value })
+            }
+        })
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [allProducts])
+
+    const materials: FilterOption[] = useMemo(() => {
+        const unique = new Map<string, FilterOption>()
+        allProducts.forEach((product) => {
+            const value = normalizeText(product.material)
+            if (value && !unique.has(value)) {
+                unique.set(value, { name: product.material as string, slug: value })
+            }
+        })
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [allProducts])
+
+    const energyClasses: FilterOption[] = useMemo(() => {
+        const unique = new Map<string, FilterOption>()
+        allProducts.forEach((product) => {
+            const value = normalizeText(product.energyClass)
+            if (value && !unique.has(value)) {
+                unique.set(value, { name: product.energyClass as string, slug: value })
+            }
+        })
+        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
+    }, [allProducts])
 
     const resetFilters = () => {
         setSelectedCategory('all')
@@ -395,75 +377,41 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                     </div>
                     <div className="home-banner-card">
                         <div className="home-banner-card-title">Smart filters</div>
-                        <div className="home-banner-card-text">
-                            Find the right product faster
-                        </div>
+                        <div className="home-banner-card-text">Find the right product faster</div>
                     </div>
                 </section>
 
                 <section className="home-layout">
                     <aside className="home-sidebar">
                         <h2>Filters</h2>
-
                         <div className="home-filter-group">
                             <label>Price range</label>
                             <div className="home-filter-row">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="Min"
-                                    value={minPrice}
-                                    onChange={(e) => setMinPrice(e.target.value)}
-                                />
-                                <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="Max"
-                                    value={maxPrice}
-                                    onChange={(e) => setMaxPrice(e.target.value)}
-                                />
+                                <input type="number" min="0" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
+                                <input type="number" min="0" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
                             </div>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="category">Category</label>
-                            <select
-                                id="category"
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                            >
+                            <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                                 <option value="all">All categories</option>
                                 {categories.map((category) => (
-                                    <option key={category.slug} value={category.slug}>
-                                        {category.name}
-                                    </option>
+                                    <option key={category.slug} value={category.slug}>{category.name}</option>
                                 ))}
                             </select>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="brand">Brand</label>
-                            <select
-                                id="brand"
-                                value={selectedBrand}
-                                onChange={(e) => setSelectedBrand(e.target.value)}
-                            >
+                            <select id="brand" value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)}>
                                 <option value="all">All brands</option>
                                 {brands.map((brand) => (
-                                    <option key={brand.slug} value={brand.slug}>
-                                        {brand.name}
-                                    </option>
+                                    <option key={brand.slug} value={brand.slug}>{brand.name}</option>
                                 ))}
                             </select>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="rating">Minimum rating</label>
-                            <select
-                                id="rating"
-                                value={minRating}
-                                onChange={(e) => setMinRating(e.target.value)}
-                            >
+                            <select id="rating" value={minRating} onChange={(e) => setMinRating(e.target.value)}>
                                 <option value="0">Any rating</option>
                                 <option value="1">1+</option>
                                 <option value="2">2+</option>
@@ -472,67 +420,38 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                                 <option value="5">5</option>
                             </select>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="color">Color</label>
-                            <select
-                                id="color"
-                                value={selectedColor}
-                                onChange={(e) => setSelectedColor(e.target.value)}
-                            >
+                            <select id="color" value={selectedColor} onChange={(e) => setSelectedColor(e.target.value)}>
                                 <option value="all">All colors</option>
                                 {colors.map((color) => (
-                                    <option key={color.slug} value={color.slug}>
-                                        {color.name}
-                                    </option>
+                                    <option key={color.slug} value={color.slug}>{color.name}</option>
                                 ))}
                             </select>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="material">Material</label>
-                            <select
-                                id="material"
-                                value={selectedMaterial}
-                                onChange={(e) => setSelectedMaterial(e.target.value)}
-                            >
+                            <select id="material" value={selectedMaterial} onChange={(e) => setSelectedMaterial(e.target.value)}>
                                 <option value="all">All materials</option>
                                 {materials.map((material) => (
-                                    <option key={material.slug} value={material.slug}>
-                                        {material.name}
-                                    </option>
+                                    <option key={material.slug} value={material.slug}>{material.name}</option>
                                 ))}
                             </select>
                         </div>
-
                         <div className="home-filter-group">
                             <label htmlFor="energyClass">Energy class</label>
-                            <select
-                                id="energyClass"
-                                value={selectedEnergyClass}
-                                onChange={(e) => setSelectedEnergyClass(e.target.value)}
-                            >
+                            <select id="energyClass" value={selectedEnergyClass} onChange={(e) => setSelectedEnergyClass(e.target.value)}>
                                 <option value="all">All classes</option>
                                 {energyClasses.map((energyClass) => (
-                                    <option key={energyClass.slug} value={energyClass.slug}>
-                                        {energyClass.name}
-                                    </option>
+                                    <option key={energyClass.slug} value={energyClass.slug}>{energyClass.name}</option>
                                 ))}
                             </select>
                         </div>
-
                         <label className="home-check">
-                            <input
-                                type="checkbox"
-                                checked={inStockOnly}
-                                onChange={(e) => setInStockOnly(e.target.checked)}
-                            />
+                            <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} />
                             In stock only
                         </label>
-
-                        <button type="button" className="home-reset-btn" onClick={resetFilters}>
-                            Reset filters
-                        </button>
+                        <button type="button" className="home-reset-btn" onClick={resetFilters}>Reset filters</button>
                     </aside>
 
                     <section className="home-products">
@@ -543,11 +462,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             </div>
                             <div className="home-sort">
                                 <label htmlFor="sort">Sort by</label>
-                                <select
-                                    id="sort"
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                >
+                                <select id="sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                                     <option value="default">Default</option>
                                     <option value="price-asc">Price: low to high</option>
                                     <option value="price-desc">Price: high to low</option>
@@ -563,20 +478,28 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <div className="home-empty">Loading products...</div>
                         ) : error ? (
                             <div className="home-empty">{error}</div>
-                        ) : filteredProducts.length === 0 ? (
+                        ) : visibleProducts.length === 0 ? (
                             <div className="home-empty">No products found.</div>
                         ) : (
                             <div className="home-grid">
-                                {filteredProducts.map((product) => (
+                                {visibleProducts.map((product) => (
                                     <ProductCard
                                         key={product.id}
                                         product={product}
                                         isWishlisted={wishlistIds.includes(product.id)}
                                         onToggleWishlist={handleToggleWishlist}
-
                                     />
                                 ))}
                             </div>
+                        )}
+
+                        <div ref={sentinelRef} style={{ height: 1 }} />
+
+                        {loadingMore && (
+                            <div className="home-loading-more">Loading more...</div>
+                        )}
+                        {!hasMore && filteredProducts.length > 0 && (
+                            <div className="home-no-more">You've reached the end of the list.</div>
                         )}
                     </section>
                 </section>
