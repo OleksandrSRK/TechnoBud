@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import type { Category, Brand } from '../../../types/admin'
 
 type ImageItem = { url: string; alt: string; isMain: boolean }
@@ -14,6 +14,15 @@ type Props = {
     brands: Brand[]
 }
 
+function generateSlug(name: string) {
+    return name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+}
+
 export default function ProductForm({
                                         formData,
                                         onChange,
@@ -24,11 +33,30 @@ export default function ProductForm({
                                         categories,
                                         brands,
                                     }: Props) {
+    const [autoSlug, setAutoSlug] = useState(true)
+
+    const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value
+        onChange(e)
+        if (autoSlug) {
+            const newSlug = generateSlug(newName)
+            const slugEvent = {
+                target: { name: 'slug', value: newSlug },
+            } as ChangeEvent<HTMLInputElement>
+            onChange(slugEvent)
+        }
+    }
+
+    const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setAutoSlug(false)
+        onChange(e)
+    }
+
     return (
         <>
             <div className="field-group">
                 <label>Product Name *</label>
-                <input name="name" placeholder="e.g. Samsung Galaxy S24" value={formData.name ?? ''} onChange={onChange} required />
+                <input name="name" placeholder="e.g. Samsung Galaxy S24" value={formData.name ?? ''} onChange={handleNameChange} required />
             </div>
             <div className="field-group">
                 <label>SKU *</label>
@@ -36,7 +64,7 @@ export default function ProductForm({
             </div>
             <div className="field-group">
                 <label>Slug *</label>
-                <input name="slug" placeholder="e.g. galaxy-s24" value={formData.slug ?? ''} onChange={onChange} required />
+                <input name="slug" placeholder="e.g. galaxy-s24" value={formData.slug ?? ''} onChange={handleSlugChange} required />
             </div>
             <div className="field-group">
                 <label>Short Description</label>
