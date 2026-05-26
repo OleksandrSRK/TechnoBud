@@ -198,3 +198,10 @@
     font-size: 16px;
     cursor: pointer;
 }
+.category-loading-more,
+.category-no-more {
+    text-align: center;
+    padding: 16px;
+    color: #888;
+    font-size: 14px;
+}

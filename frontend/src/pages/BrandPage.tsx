@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import ProductCard from '../components/products/ProductCard'
 import '../styles/BrandPage.css'
 import { API_BASE } from '../api'
 
 const API = API_BASE
+const PAGE_SIZE = 12
 
 type BrandData = {
     id: number
@@ -38,11 +39,15 @@ export default function BrandPage() {
     const { slug } = useParams<{ slug: string }>()
     const [brand, setBrand] = useState<BrandData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [sortBy, setSortBy] = useState('default')
+    const [displayedCount, setDisplayedCount] = useState(PAGE_SIZE)
+    const [hasMore, setHasMore] = useState(true)
 
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
 
     const loadWishlist = async () => {
         const token = localStorage.getItem('token')
@@ -55,7 +60,7 @@ export default function BrandPage() {
                 const data = await res.json()
                 setWishlistIds(data.map((p: any) => p.id))
             }
-        } catch { /* ignore */ }
+        } catch {}
     }
 
     useEffect(() => {
@@ -96,7 +101,7 @@ export default function BrandPage() {
                 }
                 window.dispatchEvent(new Event('wishlistUpdated'))
             }
-        } catch { /* ignore */ }
+        } catch {}
     }
 
     const products: ViewProduct[] = useMemo(() => {
@@ -138,6 +143,44 @@ export default function BrandPage() {
         }
         return list
     }, [filteredProducts, sortBy])
+
+    useEffect(() => {
+        setDisplayedCount(PAGE_SIZE)
+    }, [selectedCategory, sortBy])
+
+    const visibleProducts = useMemo(() => {
+        return sortedProducts.slice(0, displayedCount)
+    }, [sortedProducts, displayedCount])
+
+    useEffect(() => {
+        setHasMore(displayedCount < sortedProducts.length)
+    }, [displayedCount, sortedProducts.length])
+
+    const loadMore = useCallback(() => {
+        if (loadingMore || !hasMore) return
+        setLoadingMore(true)
+        setTimeout(() => {
+            setDisplayedCount(prev => Math.min(prev + PAGE_SIZE, sortedProducts.length))
+            setLoadingMore(false)
+        }, 400)
+    }, [loadingMore, hasMore, sortedProducts.length])
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current
+        if (!sentinel) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loadingMore) {
+                    loadMore()
+                }
+            },
+            { rootMargin: '200px' }
+        )
+
+        observer.observe(sentinel)
+        return () => observer.disconnect()
+    }, [loadMore, hasMore, loadingMore])
 
     if (loading) return <div className="brand-page-loading">Loading...</div>
     if (error || !brand) return <div className="brand-page-loading">{error || 'Brand not found'}</div>
@@ -194,11 +237,11 @@ export default function BrandPage() {
                     </div>
                 </div>
 
-                {sortedProducts.length === 0 ? (
+                {visibleProducts.length === 0 ? (
                     <div className="brand-empty">No products found in this category.</div>
                 ) : (
                     <div className="brand-grid brand-grid--small">
-                        {sortedProducts.map(product => (
+                        {visibleProducts.map(product => (
                             <ProductCard
                                 key={product.id}
                                 product={product}
@@ -207,6 +250,15 @@ export default function BrandPage() {
                             />
                         ))}
                     </div>
+                )}
+
+                <div ref={sentinelRef} style={{ height: 1 }} />
+
+                {loadingMore && (
+                    <div className="brand-loading-more">Loading more...</div>
+                )}
+                {!hasMore && sortedProducts.length > 0 && (
+                    <div className="brand-no-more">You've reached the end of the list.</div>
                 )}
             </main>
         </div>
