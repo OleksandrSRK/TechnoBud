@@ -87,7 +87,6 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' },
         })
 
-        // Збір унікальних брендів
         const brandsMap = new Map<number, { id: number; name: string; slug: string }>()
         for (const product of products) {
             if (product.brand && !brandsMap.has(product.brand.id)) {
@@ -136,7 +135,7 @@ export const createCategory = async (req: Request, res: Response) => {
                 imageUrl: imageUrl ? String(imageUrl) : null,
                 isActive: toBoolean(isActive, true),
                 parentId:
-                    parentId !== undefined && parentId !== null
+                    parentId !== undefined && parentId !== null && String(parentId).trim() !== ''
                         ? Number(parentId)
                         : null,
             },
@@ -192,7 +191,9 @@ export const updateCategory = async (req: Request, res: Response) => {
                 ...(parentId !== undefined
                     ? {
                         parentId:
-                            parentId !== null ? Number(parentId) : null,
+                            parentId !== null && String(parentId).trim() !== ''
+                                ? Number(parentId)
+                                : null,
                     }
                     : {}),
             },
