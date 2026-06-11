@@ -24,7 +24,10 @@ export const getCategories = async (req: Request, res: Response) => {
 
         const categories = await prisma.category.findMany({
             where: showAll ? {} : { isActive: true },
-            orderBy: { name: 'asc' },
+            orderBy: [
+                { parentId: 'asc' },
+                { name: 'asc' },
+            ],
         })
 
         return res.json(categories)
@@ -49,30 +52,44 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
 
         const category = await prisma.category.findUnique({
             where: { slug },
-            include: {
-                products: {
-                    where: {
-                        isActive: true,
-                        brand: { isActive: true },
-                    },
-                    include: {
-                        images: true,
-                        brand: true,
-                    },
-                    orderBy: { createdAt: 'desc' },
-                },
-            },
         })
 
         if (!category) {
             return res.status(404).json({ message: 'Category not found' })
         }
 
-        const brandsMap = new Map<
-            number,
-            { id: number; name: string; slug: string }
-        >()
-        for (const product of category.products) {
+        const getAllSubCategoryIds = async (parentId: number): Promise<number[]> => {
+            const children = await prisma.category.findMany({
+                where: { parentId },
+                select: { id: true },
+            })
+            let ids = children.map(c => c.id)
+            for (const childId of ids) {
+                const subIds = await getAllSubCategoryIds(childId)
+                ids = ids.concat(subIds)
+            }
+            return ids
+        }
+
+        const subCategoryIds = await getAllSubCategoryIds(category.id)
+        const allCategoryIds = [category.id, ...subCategoryIds]
+
+        const products = await prisma.product.findMany({
+            where: {
+                categoryId: { in: allCategoryIds },
+                isActive: true,
+                brand: { isActive: true },
+            },
+            include: {
+                images: true,
+                brand: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        })
+
+        // Збір унікальних брендів
+        const brandsMap = new Map<number, { id: number; name: string; slug: string }>()
+        for (const product of products) {
             if (product.brand && !brandsMap.has(product.brand.id)) {
                 brandsMap.set(product.brand.id, {
                     id: product.brand.id,
@@ -86,7 +103,12 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
         )
 
         return res.json({
-            ...category,
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            imageUrl: category.imageUrl,
+            products,
             brands,
         })
     } catch (error) {

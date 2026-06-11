@@ -25,6 +25,7 @@ type Category = {
     id: number
     name: string
     slug: string
+    parentId: number | null
 }
 
 type Brand = {
@@ -185,7 +186,7 @@ export default function Header({
                                         <button
                                             key={category.id}
                                             type="button"
-                                            className="tb-catalog-item"
+                                            className={`tb-catalog-item ${category.parentId !== null ? 'tb-catalog-item--sub' : ''}`}
                                             onClick={() => {
                                                 navigate(`/category/${category.slug}`)
                                                 setCatalogOpen(false)

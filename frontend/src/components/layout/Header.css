@@ -346,3 +346,10 @@
     align-items: center;
     justify-content: center;
 }
+.tb-catalog-item--sub {
+    padding-left: 24px;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+
