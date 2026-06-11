@@ -346,10 +346,26 @@
     align-items: center;
     justify-content: center;
 }
+.tb-catalog-item--parent {
+    font-weight: 700;
+    background: #f0f4ff;
+}
+
+.tb-catalog-item--parent:hover {
+    background: rgba(30, 136, 229, 0.08);
+}
+
 .tb-catalog-item--sub {
     padding-left: 24px;
     font-size: 13px;
+    color: #333333;
+    background: transparent;
+    border-left: none;
     opacity: 0.9;
+}
+
+.tb-catalog-item--sub:hover {
+    background: rgba(30, 136, 229, 0.06);
 }
 
 

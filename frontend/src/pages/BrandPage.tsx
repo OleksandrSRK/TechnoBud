@@ -35,6 +35,15 @@ type ViewProduct = {
     images?: any[]
 }
 
+type CategoryRaw = {
+    id: number
+    name: string
+    slug: string
+    parentId: number | null
+}
+
+type CategoryNode = CategoryRaw & { children: CategoryNode[] }
+
 export default function BrandPage() {
     const { slug } = useParams<{ slug: string }>()
     const [brand, setBrand] = useState<BrandData | null>(null)
@@ -48,6 +57,8 @@ export default function BrandPage() {
 
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
     const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+    const [descendantSlugs, setDescendantSlugs] = useState<Map<string, string[]>>(new Map())
 
     const loadWishlist = async () => {
         const token = localStorage.getItem('token')
@@ -64,23 +75,56 @@ export default function BrandPage() {
     }
 
     useEffect(() => {
-        const loadBrand = async () => {
+        const loadData = async () => {
             try {
                 setError(null)
-                const res = await fetch(`${API}/brands/${slug}`)
-                if (!res.ok) {
-                    const data = await res.json().catch(() => null)
+                const [brandRes, categoriesRes] = await Promise.all([
+                    fetch(`${API}/brands/${slug}`),
+                    fetch(`${API}/categories?all=true`)
+                ])
+
+                if (!brandRes.ok) {
+                    const data = await brandRes.json().catch(() => null)
                     throw new Error(data?.message || 'Brand not found')
                 }
-                const data: BrandData = await res.json()
-                setBrand(data)
+                const brandData: BrandData = await brandRes.json()
+                setBrand(brandData)
+
+                if (categoriesRes.ok) {
+                    const cats: CategoryRaw[] = await categoriesRes.json()
+                    const map = new Map<number, CategoryNode>()
+                    const roots: CategoryNode[] = []
+                    cats.forEach(c => map.set(c.id, { ...c, children: [] }))
+                    cats.forEach(c => {
+                        const node = map.get(c.id)!
+                        if (c.parentId === null) {
+                            roots.push(node)
+                        } else {
+                            map.get(c.parentId)?.children.push(node)
+                        }
+                    })
+
+                    const getSlugs = (node: CategoryNode): string[] => {
+                        const slugs = [node.slug]
+                        node.children.forEach(child => {
+                            slugs.push(...getSlugs(child))
+                        })
+                        return slugs
+                    }
+
+                    const slugMap = new Map<string, string[]>()
+                    roots.forEach(root => {
+                        slugMap.set(root.slug, getSlugs(root))
+                    })
+                    setDescendantSlugs(slugMap)
+                }
             } catch (err: any) {
                 setError(err.message)
             } finally {
                 setLoading(false)
             }
         }
-        loadBrand()
+        loadData()
         loadWishlist()
     }, [slug])
 
@@ -127,10 +171,15 @@ export default function BrandPage() {
         })
     }, [brand])
 
+    const selectedCategorySlugs = useMemo(() => {
+        if (selectedCategory === 'all') return []
+        return descendantSlugs.get(selectedCategory) || [selectedCategory]
+    }, [selectedCategory, descendantSlugs])
+
     const filteredProducts = useMemo(() => {
         if (selectedCategory === 'all') return products
-        return products.filter(p => p.categorySlug === selectedCategory)
-    }, [products, selectedCategory])
+        return products.filter(p => selectedCategorySlugs.includes(p.categorySlug))
+    }, [products, selectedCategory, selectedCategorySlugs])
 
     const sortedProducts = useMemo(() => {
         const list = [...filteredProducts]

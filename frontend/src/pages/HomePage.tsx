@@ -80,6 +80,15 @@ type HomePageProps = {
     isLoggedIn: boolean
 }
 
+type CategoryRaw = {
+    id: number
+    name: string
+    slug: string
+    parentId: number | null
+}
+
+type CategoryNode = CategoryRaw & { children: CategoryNode[] }
+
 function toNumber(value: unknown): number {
     if (typeof value === 'number') return value
     if (typeof value === 'string') {
@@ -115,6 +124,9 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [sortBy, setSortBy] = useState('default')
 
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
+
+    const [flatCategories, setFlatCategories] = useState<CategoryRaw[]>([])
+
     const sentinelRef = useRef<HTMLDivElement | null>(null)
 
     const loadWishlist = useCallback(async () => {
@@ -197,6 +209,21 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     }, [])
 
     useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/categories`)
+                if (res.ok) {
+                    const data: CategoryRaw[] = await res.json()
+                    setFlatCategories(data)
+                }
+            } catch {
+                console.error('Failed to load categories')
+            }
+        }
+        loadCategories()
+    }, [])
+
+    useEffect(() => {
         loadWishlist()
     }, [isLoggedIn, loadWishlist])
 
@@ -222,6 +249,47 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         }
     }
 
+    const categoryTree = useMemo(() => {
+        if (flatCategories.length === 0) return []
+        const map = new Map<number, CategoryNode>()
+        const roots: CategoryNode[] = []
+        flatCategories.forEach(c => map.set(c.id, { ...c, children: [] }))
+        flatCategories.forEach(c => {
+            const node = map.get(c.id)!
+            if (c.parentId === null) {
+                roots.push(node)
+            } else {
+                map.get(c.parentId)?.children.push(node)
+            }
+        })
+        return roots
+    }, [flatCategories])
+
+    const categoryBySlug = useMemo(() => {
+        const map = new Map<string, CategoryNode>()
+        const traverse = (nodes: CategoryNode[]) => {
+            nodes.forEach(node => {
+                map.set(node.slug, node)
+                traverse(node.children)
+            })
+        }
+        traverse(categoryTree)
+        return map
+    }, [categoryTree])
+
+    const getDescendantSlugs = (slug: string): string[] => {
+        const node = categoryBySlug.get(slug)
+        if (!node) return [slug]
+        const result = [slug]
+        node.children.forEach(child => result.push(...getDescendantSlugs(child.slug)))
+        return result
+    }
+
+    const selectedCategorySlugs = useMemo(() => {
+        if (selectedCategory === 'all') return []
+        return getDescendantSlugs(selectedCategory)
+    }, [selectedCategory, categoryBySlug])
+
     const filteredProducts = useMemo(() => {
         const minPriceNumber = minPrice ? Number(minPrice) : null
         const maxPriceNumber = maxPrice ? Number(maxPrice) : null
@@ -229,7 +297,9 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
         let result = [...allProducts]
 
-        if (selectedCategory !== 'all') result = result.filter(p => p.categorySlug === selectedCategory)
+        if (selectedCategory !== 'all') {
+            result = result.filter(p => selectedCategorySlugs.includes(p.categorySlug))
+        }
         if (selectedBrand !== 'all') result = result.filter(p => p.brandSlug === selectedBrand)
         if (selectedColor !== 'all') result = result.filter(p => normalizeText(p.color) === selectedColor)
         if (selectedMaterial !== 'all') result = result.filter(p => normalizeText(p.material) === selectedMaterial)
@@ -257,7 +327,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         }
 
         return result
-    }, [allProducts, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, minRating, inStockOnly, sortBy, search])
+    }, [allProducts, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, minRating, inStockOnly, sortBy, search, selectedCategorySlugs])
 
     useEffect(() => {
         setDisplayedCount(PAGE_SIZE)
@@ -297,15 +367,24 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         return () => observer.disconnect()
     }, [loadMore, hasMore, loadingMore])
 
-    const categories: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        allProducts.forEach((product) => {
-            if (!unique.has(product.categorySlug)) {
-                unique.set(product.categorySlug, { name: product.category, slug: product.categorySlug })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [allProducts])
+    const categoryOptions = useMemo(() => {
+        const renderOptions = (nodes: CategoryNode[], depth: number = 0): React.ReactNode[] => {
+            const result: React.ReactNode[] = []
+            nodes.forEach(node => {
+                const prefix = depth > 0 ? '— '.repeat(depth) : ''
+                result.push(
+                    <option key={node.slug} value={node.slug}>
+                        {prefix}{node.name}
+                    </option>
+                )
+                if (node.children.length > 0) {
+                    result.push(...renderOptions(node.children, depth + 1))
+                }
+            })
+            return result
+        }
+        return renderOptions(categoryTree)
+    }, [categoryTree])
 
     const brands: FilterOption[] = useMemo(() => {
         const unique = new Map<string, FilterOption>()
@@ -395,9 +474,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <label htmlFor="category">Category</label>
                             <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                                 <option value="all">All categories</option>
-                                {categories.map((category) => (
-                                    <option key={category.slug} value={category.slug}>{category.name}</option>
-                                ))}
+                                {categoryOptions}
                             </select>
                         </div>
                         <div className="home-filter-group">

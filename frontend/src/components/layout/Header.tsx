@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE } from '../../api'
 import {
@@ -27,6 +27,8 @@ type Category = {
     slug: string
     parentId: number | null
 }
+
+type CategoryNode = Category & { children: CategoryNode[] }
 
 type Brand = {
     id: number
@@ -149,6 +151,41 @@ export default function Header({
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [setCatalogOpen])
 
+    const buildCategoryTree = (flatList: Category[]): CategoryNode[] => {
+        const map = new Map<number, CategoryNode>()
+        const roots: CategoryNode[] = []
+
+        flatList.forEach(cat => map.set(cat.id, { ...cat, children: [] }))
+        flatList.forEach(cat => {
+            const node = map.get(cat.id)!
+            if (cat.parentId === null) {
+                roots.push(node)
+            } else {
+                map.get(cat.parentId)?.children.push(node)
+            }
+        })
+        return roots
+    }
+
+    const renderCategory = (cat: CategoryNode, depth = 0): React.ReactNode => (
+        <React.Fragment key={cat.id}>
+            <button
+                type="button"
+                className={`tb-catalog-item ${depth === 0 ? 'tb-catalog-item--parent' : 'tb-catalog-item--sub'}`}
+                style={depth > 0 ? { paddingLeft: `${24 + (depth - 1) * 16}px` } : undefined}
+                onClick={() => {
+                    navigate(`/category/${cat.slug}`)
+                    setCatalogOpen(false)
+                }}
+            >
+                {cat.name}
+            </button>
+            {cat.children.map(child => renderCategory(child, depth + 1))}
+        </React.Fragment>
+    )
+
+    const categoryTree = buildCategoryTree(categories)
+
     return (
         <header className="tb-header">
             <div className="tb-container tb-header-inner">
@@ -182,19 +219,7 @@ export default function Header({
                             <div className="tb-catalog-column">
                                 <h3>Categories</h3>
                                 <div className="tb-catalog-list">
-                                    {categories.map((category) => (
-                                        <button
-                                            key={category.id}
-                                            type="button"
-                                            className={`tb-catalog-item ${category.parentId !== null ? 'tb-catalog-item--sub' : ''}`}
-                                            onClick={() => {
-                                                navigate(`/category/${category.slug}`)
-                                                setCatalogOpen(false)
-                                            }}
-                                        >
-                                            {category.name}
-                                        </button>
-                                    ))}
+                                    {categoryTree.map(root => renderCategory(root))}
                                 </div>
                             </div>
                             <div className="tb-catalog-column">
