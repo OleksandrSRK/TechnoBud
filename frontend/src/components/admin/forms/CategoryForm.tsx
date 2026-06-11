@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+import type { Category } from '../../../types/admin'
 
 type Props = {
     formData: any
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
+    categories: Category[]
 }
 
 function generateSlug(name: string) {
@@ -14,7 +16,7 @@ function generateSlug(name: string) {
         .replace(/^-|-$/g, '')
 }
 
-export default function CategoryForm({ formData, onChange }: Props) {
+export default function CategoryForm({ formData, onChange, categories }: Props) {
     const [autoSlug, setAutoSlug] = useState(true)
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +41,15 @@ export default function CategoryForm({ formData, onChange }: Props) {
             <div className="field-group">
                 <label>Slug *</label>
                 <input name="slug" placeholder="e.g. washing-machines" value={formData.slug ?? ''} onChange={handleSlugChange} required />
+            </div>
+            <div className="field-group">
+                <label>Parent Category</label>
+                <select name="parentId" value={formData.parentId ?? ''} onChange={onChange}>
+                    <option value="">-- None (top-level) --</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
             </div>
             <div className="field-group">
                 <label>Description</label>

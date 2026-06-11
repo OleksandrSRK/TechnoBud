@@ -227,7 +227,7 @@ export default function AdminPage() {
                         brands={brands}
                     />
                 )
-            case 'categories': return <CategoryForm formData={formData} onChange={handleFormChange} />
+            case 'categories': return <CategoryForm formData={formData} onChange={handleFormChange} categories={categories} />
             case 'brands': return <BrandForm formData={formData} onChange={handleFormChange} />
             default: return null
         }
