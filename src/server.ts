@@ -90,7 +90,6 @@ app.use((_req, res) => {
 async function bootstrap() {
     try {
         console.log('[BOOT] Server starting...')
-        // Проверка подключения к БД (опционально)
         await prisma.$connect()
         console.log('[DB] Connected successfully')
 

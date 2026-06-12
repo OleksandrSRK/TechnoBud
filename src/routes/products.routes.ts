@@ -5,6 +5,7 @@ import {
     getProducts,
     getProductById,
     getAllProducts,
+    getProductsPaginated,
     createProduct,
     updateProduct,
     deleteProduct,
@@ -13,9 +14,10 @@ import {
 const router = Router()
 
 router.get('/', getProducts)
-router.get('/all', authMiddleware, requireAdmin, getAllProducts)
+router.get('/paginated', getProductsPaginated)
 router.get('/:id', getProductById)
 
+router.get('/all', authMiddleware, requireAdmin, getAllProducts)
 router.post('/', authMiddleware, requireAdmin, createProduct)
 router.put('/:id', authMiddleware, requireAdmin, updateProduct)
 router.patch('/:id', authMiddleware, requireAdmin, updateProduct)

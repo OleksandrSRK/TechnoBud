@@ -18,7 +18,53 @@ function toBoolean(value: unknown, fallback = false): boolean {
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
+        const search = req.query.search as string | undefined;
+        const skip = Math.max(0, Number(req.query.skip) || 0);
+        const take = Math.min(100, Number(req.query.take) || 12);
+
+        const where: any = {
+            isActive: true,
+            category: { isActive: true },
+            brand: { isActive: true },
+        };
+
+        if (search) {
+            where.OR = [
+                { name: { contains: search } },
+                { description: { contains: search } },
+                { shortDescription: { contains: search } },
+            ];
+        }
+
+        const products = await prisma.product.findMany({
+            where,
+            include: {
+                images: true,
+                specifications: true,
+                category: true,
+                brand: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take,
+        });
+
+        return res.json(products);
+    } catch (error) {
+        console.error('GET /products ERROR:', error);
+        return res.status(500).json({ message: 'Failed to load products' });
+    }
+};
+
+export const getProductsPaginated = async (req: Request, res: Response) => {
+    try {
         const search = req.query.search as string | undefined
+        const categorySlug = req.query.category as string | undefined
+        const brandSlug = req.query.brand as string | undefined
+        const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined
+        const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined
+        const cursor = req.query.cursor ? Number(req.query.cursor) : undefined
+        const take = Math.min(100, Number(req.query.take) || 12)
 
         const where: any = {
             isActive: true,
@@ -33,6 +79,17 @@ export const getProducts = async (req: Request, res: Response) => {
                 { shortDescription: { contains: search } },
             ]
         }
+        if (categorySlug) {
+            where.category = { ...where.category, slug: categorySlug }
+        }
+        if (brandSlug) {
+            where.brand = { ...where.brand, slug: brandSlug }
+        }
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            where.price = {}
+            if (minPrice !== undefined) where.price.gte = minPrice
+            if (maxPrice !== undefined) where.price.lte = maxPrice
+        }
 
         const products = await prisma.product.findMany({
             where,
@@ -42,12 +99,14 @@ export const getProducts = async (req: Request, res: Response) => {
                 category: true,
                 brand: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { id: 'asc' },
+            ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+            take,
         })
 
         return res.json(products)
     } catch (error) {
-        console.error('GET /products ERROR:', error)
+        console.error('GET /products/paginated ERROR:', error)
         return res.status(500).json({ message: 'Failed to load products' })
     }
 }
