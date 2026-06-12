@@ -35,15 +35,6 @@ type ViewProduct = {
     images?: any[]
 }
 
-type CategoryRaw = {
-    id: number
-    name: string
-    slug: string
-    parentId: number | null
-}
-
-type CategoryNode = CategoryRaw & { children: CategoryNode[] }
-
 export default function BrandPage() {
     const { slug } = useParams<{ slug: string }>()
     const [brand, setBrand] = useState<BrandData | null>(null)
@@ -58,15 +49,11 @@ export default function BrandPage() {
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
     const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-    const [descendantSlugs, setDescendantSlugs] = useState<Map<string, string[]>>(new Map())
-
     const loadWishlist = async () => {
         const token = localStorage.getItem('token')
         if (!token) return
         try {
-            const res = await fetch(`${API}/wishlist`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+            const res = await fetch(`${API}/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
             if (res.ok) {
                 const data = await res.json()
                 setWishlistIds(data.map((p: any) => p.id))
@@ -75,56 +62,20 @@ export default function BrandPage() {
     }
 
     useEffect(() => {
-        const loadData = async () => {
+        const loadBrand = async () => {
             try {
                 setError(null)
-                const [brandRes, categoriesRes] = await Promise.all([
-                    fetch(`${API}/brands/${slug}`),
-                    fetch(`${API}/categories?all=true`)
-                ])
-
-                if (!brandRes.ok) {
-                    const data = await brandRes.json().catch(() => null)
-                    throw new Error(data?.message || 'Brand not found')
-                }
-                const brandData: BrandData = await brandRes.json()
-                setBrand(brandData)
-
-                if (categoriesRes.ok) {
-                    const cats: CategoryRaw[] = await categoriesRes.json()
-                    const map = new Map<number, CategoryNode>()
-                    const roots: CategoryNode[] = []
-                    cats.forEach(c => map.set(c.id, { ...c, children: [] }))
-                    cats.forEach(c => {
-                        const node = map.get(c.id)!
-                        if (c.parentId === null) {
-                            roots.push(node)
-                        } else {
-                            map.get(c.parentId)?.children.push(node)
-                        }
-                    })
-
-                    const getSlugs = (node: CategoryNode): string[] => {
-                        const slugs = [node.slug]
-                        node.children.forEach(child => {
-                            slugs.push(...getSlugs(child))
-                        })
-                        return slugs
-                    }
-
-                    const slugMap = new Map<string, string[]>()
-                    roots.forEach(root => {
-                        slugMap.set(root.slug, getSlugs(root))
-                    })
-                    setDescendantSlugs(slugMap)
-                }
+                const res = await fetch(`${API}/brands/${slug}`)
+                if (!res.ok) throw new Error('Brand not found')
+                const data: BrandData = await res.json()
+                setBrand(data)
             } catch (err: any) {
                 setError(err.message)
             } finally {
                 setLoading(false)
             }
         }
-        loadData()
+        loadBrand()
         loadWishlist()
     }, [slug])
 
@@ -171,15 +122,10 @@ export default function BrandPage() {
         })
     }, [brand])
 
-    const selectedCategorySlugs = useMemo(() => {
-        if (selectedCategory === 'all') return []
-        return descendantSlugs.get(selectedCategory) || [selectedCategory]
-    }, [selectedCategory, descendantSlugs])
-
     const filteredProducts = useMemo(() => {
         if (selectedCategory === 'all') return products
-        return products.filter(p => selectedCategorySlugs.includes(p.categorySlug))
-    }, [products, selectedCategory, selectedCategorySlugs])
+        return products.filter(p => p.categorySlug === selectedCategory)
+    }, [products, selectedCategory])
 
     const sortedProducts = useMemo(() => {
         const list = [...filteredProducts]
@@ -217,7 +163,6 @@ export default function BrandPage() {
     useEffect(() => {
         const sentinel = sentinelRef.current
         if (!sentinel) return
-
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting && hasMore && !loadingMore) {
@@ -226,7 +171,6 @@ export default function BrandPage() {
             },
             { rootMargin: '200px' }
         )
-
         observer.observe(sentinel)
         return () => observer.disconnect()
     }, [loadMore, hasMore, loadingMore])
@@ -239,9 +183,7 @@ export default function BrandPage() {
             <main className="brand-main">
                 <section className="brand-banner">
                     <div className="brand-banner-content">
-                        {brand.logoUrl && (
-                            <img src={brand.logoUrl} alt={brand.name} className="brand-logo" />
-                        )}
+                        {brand.logoUrl && <img src={brand.logoUrl} alt={brand.name} className="brand-logo" />}
                         <div>
                             <h1>{brand.name}</h1>
                             {brand.description && <p>{brand.description}</p>}
@@ -255,18 +197,9 @@ export default function BrandPage() {
                 </section>
 
                 <div className="brand-categories">
-                    <button
-                        className={`brand-category-btn ${selectedCategory === 'all' ? 'active' : ''}`}
-                        onClick={() => setSelectedCategory('all')}
-                    >
-                        All
-                    </button>
+                    <button className={`brand-category-btn ${selectedCategory === 'all' ? 'active' : ''}`} onClick={() => setSelectedCategory('all')}>All</button>
                     {brand.categories.map(cat => (
-                        <button
-                            key={cat.id}
-                            className={`brand-category-btn ${selectedCategory === cat.slug ? 'active' : ''}`}
-                            onClick={() => setSelectedCategory(cat.slug)}
-                        >
+                        <button key={cat.id} className={`brand-category-btn ${selectedCategory === cat.slug ? 'active' : ''}`} onClick={() => setSelectedCategory(cat.slug)}>
                             {cat.name}
                         </button>
                     ))}
@@ -291,24 +224,14 @@ export default function BrandPage() {
                 ) : (
                     <div className="brand-grid brand-grid--small">
                         {visibleProducts.map(product => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                isWishlisted={wishlistIds.includes(product.id)}
-                                onToggleWishlist={handleToggleWishlist}
-                            />
+                            <ProductCard key={product.id} product={product} isWishlisted={wishlistIds.includes(product.id)} onToggleWishlist={handleToggleWishlist} />
                         ))}
                     </div>
                 )}
 
                 <div ref={sentinelRef} style={{ height: 1 }} />
-
-                {loadingMore && (
-                    <div className="brand-loading-more">Loading more...</div>
-                )}
-                {!hasMore && sortedProducts.length > 0 && (
-                    <div className="brand-no-more">You've reached the end of the list.</div>
-                )}
+                {loadingMore && <div className="brand-loading-more">Loading more...</div>}
+                {!hasMore && sortedProducts.length > 0 && <div className="brand-no-more">You've reached the end of the list.</div>}
             </main>
         </div>
     )

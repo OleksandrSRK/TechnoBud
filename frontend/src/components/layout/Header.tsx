@@ -72,6 +72,14 @@ export default function Header({
             if (res.ok) {
                 const data = await res.json()
                 setWishlistCount(data.length)
+            } else {
+                if (res.status === 401) {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('role')
+                    setWishlistCount(0)
+                }
+                await res.text() // consume body to suppress browser warning
             }
         } catch {}
     }, [])
@@ -90,11 +98,24 @@ export default function Header({
                 const data = await res.json()
                 const total = data.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
                 setCartCount(total)
+            } else {
+                if (res.status === 401) {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('role')
+                    setCartCount(0)
+                }
+                await res.text()
             }
         } catch {}
     }, [])
 
     useEffect(() => {
+        if (!isLoggedIn) {
+            setWishlistCount(0)
+            setCartCount(0)
+            return
+        }
         loadWishlist()
         loadCart()
     }, [isLoggedIn, loadWishlist, loadCart])

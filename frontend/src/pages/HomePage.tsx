@@ -104,7 +104,6 @@ function normalizeText(value?: string | null): string {
 
 export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [products, setProducts] = useState<ViewProduct[]>([])
-    const [cursor, setCursor] = useState<number | null>(null)
     const [loadingInitial, setLoadingInitial] = useState(true)
     const [loadingMore, setLoadingMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -125,6 +124,8 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [flatCategories, setFlatCategories] = useState<CategoryRaw[]>([])
 
     const sentinelRef = useRef<HTMLDivElement | null>(null)
+    const cursorRef = useRef<number | null>(null)
+    const isFetching = useRef(false)
 
     const loadWishlist = useCallback(async () => {
         const token = localStorage.getItem('token')
@@ -136,25 +137,36 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             if (res.ok) {
                 const data = await res.json()
                 setWishlistIds(data.map((p: any) => p.id))
+            } else {
+                if (res.status === 401) {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('role')
+                    setWishlistIds([])
+                }
+                await res.text()
             }
         } catch (err) {
             console.error('Failed to load wishlist', err)
         }
     }, [])
 
-    const fetchProducts = useCallback(async (reset: boolean) => {
+    const fetchPage = useCallback(async (reset: boolean) => {
+        if (isFetching.current) return
+        isFetching.current = true
+
         if (reset) {
-            setProducts([])
-            setCursor(null)
-            setHasMore(true)
-            setError(null)
+            setLoadingInitial(true)
+        } else {
+            setLoadingMore(true)
         }
 
-        setLoadingMore(true)
         try {
             const params = new URLSearchParams()
             params.append('take', String(12))
-            if (!reset && cursor) params.append('cursor', String(cursor))
+            if (!reset && cursorRef.current !== null) {
+                params.append('cursor', String(cursorRef.current))
+            }
             if (search.trim()) params.append('search', search.trim())
             if (selectedCategory !== 'all') params.append('category', selectedCategory)
             if (selectedBrand !== 'all') params.append('brand', selectedBrand)
@@ -168,9 +180,8 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             if (sortBy !== 'default') params.append('sort', sortBy)
 
             const res = await fetch(`${API_BASE}/products/paginated?${params}`)
-            if (!res.ok) {
-                throw new Error('Failed to fetch products')
-            }
+            if (!res.ok) throw new Error('Failed to fetch products')
+
             const data = await res.json()
             const mapped: ViewProduct[] = (data as ApiProduct[]).map(product => {
                 const sortedImages = product.images
@@ -201,23 +212,28 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                     images: sortedImages,
                 }
             })
+
             if (reset) {
                 setProducts(mapped)
             } else {
                 setProducts(prev => [...prev, ...mapped])
             }
-            setHasMore(mapped.length === 12)
+
+            const hasMoreItems = mapped.length === 12
+            setHasMore(hasMoreItems)
             if (mapped.length > 0) {
-                setCursor(mapped[mapped.length - 1].id)
+                cursorRef.current = mapped[mapped.length - 1].id
             }
+            setError(null)
         } catch (err) {
             console.error(err)
-            setError('Failed to load products')
+            if (reset) setError('Failed to load products')
         } finally {
-            setLoadingMore(false)
             setLoadingInitial(false)
+            setLoadingMore(false)
+            isFetching.current = false
         }
-    }, [cursor, search, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, inStockOnly, minRating, sortBy])
+    }, [search, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, inStockOnly, minRating, sortBy])
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -232,17 +248,17 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             }
         }
         loadCategories()
-        loadWishlist()
-        fetchProducts(true)
-    }, [])
+        fetchPage(true)
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadWishlist()
     }, [isLoggedIn, loadWishlist])
 
     useEffect(() => {
-        fetchProducts(true)
-    }, [fetchProducts])
+        if (loadingInitial) return
+        fetchPage(true)
+    }, [fetchPage])
 
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
@@ -364,7 +380,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting && hasMore && !loadingMore && !loadingInitial) {
-                    fetchProducts(false)
+                    fetchPage(false)
                 }
             },
             { rootMargin: '200px' }
@@ -372,7 +388,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
         observer.observe(sentinel)
         return () => observer.disconnect()
-    }, [hasMore, loadingMore, loadingInitial, fetchProducts])
+    }, [hasMore, loadingMore, loadingInitial, fetchPage])
 
     return (
         <div className="home-page">

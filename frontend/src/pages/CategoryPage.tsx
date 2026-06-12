@@ -48,7 +48,7 @@ export default function CategoryPage() {
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
     const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-    const loadWishlist = async () => {
+    const loadWishlist = useCallback(async () => {
         const token = localStorage.getItem('token')
         if (!token) return
         try {
@@ -60,12 +60,13 @@ export default function CategoryPage() {
                 setWishlistIds(data.map((p: any) => p.id))
             }
         } catch {}
-    }
+    }, [])
 
     useEffect(() => {
         const loadCategory = async () => {
             try {
                 setError(null)
+                setLoading(true)
                 const res = await fetch(`${API}/categories/${slug}`)
                 if (!res.ok) {
                     const data = await res.json().catch(() => null)
@@ -81,7 +82,7 @@ export default function CategoryPage() {
         }
         loadCategory()
         loadWishlist()
-    }, [slug])
+    }, [slug, loadWishlist])
 
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
@@ -103,7 +104,7 @@ export default function CategoryPage() {
         } catch {}
     }
 
-    const products: ViewProduct[] = useMemo(() => {
+    const allProducts: ViewProduct[] = useMemo(() => {
         if (!category) return []
         return category.products.map((p: any) => {
             const mainImg = p.images?.find((img: any) => img.isMain) || p.images?.[0]
@@ -127,9 +128,9 @@ export default function CategoryPage() {
     }, [category])
 
     const filteredProducts = useMemo(() => {
-        if (selectedBrand === 'all') return products
-        return products.filter(p => p.brandSlug === selectedBrand)
-    }, [products, selectedBrand])
+        if (selectedBrand === 'all') return allProducts
+        return allProducts.filter(p => p.brandSlug === selectedBrand)
+    }, [allProducts, selectedBrand])
 
     const sortedProducts = useMemo(() => {
         const list = [...filteredProducts]
