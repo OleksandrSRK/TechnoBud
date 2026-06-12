@@ -19,8 +19,6 @@ function toBoolean(value: unknown, fallback = false): boolean {
 export const getProducts = async (req: Request, res: Response) => {
     try {
         const search = req.query.search as string | undefined;
-        const skip = Math.max(0, Number(req.query.skip) || 0);
-        const take = Math.min(100, Number(req.query.take) || 12);
 
         const where: any = {
             isActive: true,
@@ -36,6 +34,7 @@ export const getProducts = async (req: Request, res: Response) => {
             ];
         }
 
+        // Жодних skip / take – повертаємо всі товари
         const products = await prisma.product.findMany({
             where,
             include: {
@@ -45,8 +44,6 @@ export const getProducts = async (req: Request, res: Response) => {
                 brand: true,
             },
             orderBy: { createdAt: 'desc' },
-            skip,
-            take,
         });
 
         return res.json(products);
