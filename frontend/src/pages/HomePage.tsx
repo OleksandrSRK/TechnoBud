@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import ProductCard from '../components/products/ProductCard'
 import '../styles/HomePageStyles.css'
 import { API_BASE } from '../api'
@@ -103,9 +103,11 @@ function normalizeText(value?: string | null): string {
 }
 
 export default function HomePage({ search, isLoggedIn }: HomePageProps) {
-    const [allProducts, setAllProducts] = useState<ViewProduct[]>([])
-    const [loading, setLoading] = useState(true)
+    const [products, setProducts] = useState<ViewProduct[]>([])
+    const [loadingInitial, setLoadingInitial] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [hasMore, setHasMore] = useState(true)
 
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [selectedBrand, setSelectedBrand] = useState('all')
@@ -121,6 +123,10 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
     const [flatCategories, setFlatCategories] = useState<CategoryRaw[]>([])
 
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
+    const cursorRef = useRef<number | null>(null)
+    const isFetching = useRef(false)
+
     const loadWishlist = useCallback(async () => {
         const token = localStorage.getItem('token')
         if (!token) return
@@ -131,74 +137,103 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             if (res.ok) {
                 const data = await res.json()
                 setWishlistIds(data.map((p: any) => p.id))
+            } else {
+                if (res.status === 401) {
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('role')
+                    setWishlistIds([])
+                }
+                await res.text()
             }
         } catch (err) {
             console.error('Failed to load wishlist', err)
         }
     }, [])
 
-    useEffect(() => {
-        const loadProducts = async () => {
-            try {
-                setError(null)
-                const res = await fetch(`${API_BASE}/products`)
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => null)
-                    throw new Error(
-                        errorData?.message || `Failed to load products (${res.status})`
-                    )
-                }
-                const data: unknown = await res.json()
-                if (!Array.isArray(data)) {
-                    throw new Error('Invalid products response from server')
-                }
+    const fetchPage = useCallback(async (reset: boolean) => {
+        if (isFetching.current) return
+        isFetching.current = true
 
-                const mappedProducts: ViewProduct[] = (data as ApiProduct[])
-                    .filter((product) => product.isActive !== false)
-                    .map((product) => {
-                        const sortedImages = product.images
-                            ? [...product.images].sort((a, b) => a.sortOrder - b.sortOrder)
-                            : []
-                        const mainImage =
-                            sortedImages.find((image) => image.isMain) || sortedImages[0]
-
-                        return {
-                            id: product.id,
-                            name: product.name,
-                            price: toNumber(product.price),
-                            oldPrice: product.oldPrice != null ? toNumber(product.oldPrice) : null,
-                            currency: product.currency || 'UAH',
-                            category: product.category?.name || 'Unknown',
-                            categorySlug: product.category?.slug || 'unknown',
-                            brand: product.brand?.name || 'Unknown',
-                            brandSlug: product.brand?.slug || 'unknown',
-                            imageUrl: mainImage?.url || null,
-                            rating: product.rating ?? 0,
-                            reviewCount: product.reviewCount ?? 0,
-                            stock: product.stock ?? 0,
-                            warrantyMonths: product.warrantyMonths ?? null,
-                            powerW: product.powerW ?? null,
-                            energyClass: product.energyClass ?? null,
-                            color: product.color ?? null,
-                            material: product.material ?? null,
-                            weightKg: product.weightKg != null ? toNumber(product.weightKg) : null,
-                            isFeatured: product.isFeatured ?? false,
-                            images: sortedImages,
-                        }
-                    })
-
-                setAllProducts(mappedProducts)
-            } catch (err) {
-                console.error('Failed to load products:', err)
-                setAllProducts([])
-                setError(err instanceof Error ? err.message : 'Failed to load products')
-            } finally {
-                setLoading(false)
-            }
+        if (reset) {
+            setLoadingInitial(true)
+        } else {
+            setLoadingMore(true)
         }
 
-        loadProducts()
-    }, [])
+        try {
+            const params = new URLSearchParams()
+            params.append('take', String(12))
+            if (!reset && cursorRef.current !== null) {
+                params.append('cursor', String(cursorRef.current))
+            }
+            if (search.trim()) params.append('search', search.trim())
+            if (selectedCategory !== 'all') params.append('category', selectedCategory)
+            if (selectedBrand !== 'all') params.append('brand', selectedBrand)
+            if (selectedColor !== 'all') params.append('color', selectedColor)
+            if (selectedMaterial !== 'all') params.append('material', selectedMaterial)
+            if (selectedEnergyClass !== 'all') params.append('energyClass', selectedEnergyClass)
+            if (minPrice) params.append('minPrice', minPrice)
+            if (maxPrice) params.append('maxPrice', maxPrice)
+            if (inStockOnly) params.append('inStockOnly', 'true')
+            if (minRating !== '0') params.append('minRating', minRating)
+            if (sortBy !== 'default') params.append('sort', sortBy)
+
+            const res = await fetch(`${API_BASE}/products/paginated?${params}`)
+            if (!res.ok) throw new Error('Failed to fetch products')
+
+            const data = await res.json()
+            const mapped: ViewProduct[] = (data as ApiProduct[]).map(product => {
+                const sortedImages = product.images
+                    ? [...product.images].sort((a, b) => a.sortOrder - b.sortOrder)
+                    : []
+                const mainImage = sortedImages.find(img => img.isMain) || sortedImages[0]
+                return {
+                    id: product.id,
+                    name: product.name,
+                    price: toNumber(product.price),
+                    oldPrice: product.oldPrice != null ? toNumber(product.oldPrice) : null,
+                    currency: product.currency || 'UAH',
+                    category: product.category?.name || 'Unknown',
+                    categorySlug: product.category?.slug || 'unknown',
+                    brand: product.brand?.name || 'Unknown',
+                    brandSlug: product.brand?.slug || 'unknown',
+                    imageUrl: mainImage?.url || null,
+                    rating: product.rating ?? 0,
+                    reviewCount: product.reviewCount ?? 0,
+                    stock: product.stock ?? 0,
+                    warrantyMonths: product.warrantyMonths ?? null,
+                    powerW: product.powerW ?? null,
+                    energyClass: product.energyClass ?? null,
+                    color: product.color ?? null,
+                    material: product.material ?? null,
+                    weightKg: product.weightKg != null ? toNumber(product.weightKg) : null,
+                    isFeatured: product.isFeatured ?? false,
+                    images: sortedImages,
+                }
+            })
+
+            if (reset) {
+                setProducts(mapped)
+            } else {
+                setProducts(prev => [...prev, ...mapped])
+            }
+
+            const hasMoreItems = mapped.length === 12
+            setHasMore(hasMoreItems)
+            if (mapped.length > 0) {
+                cursorRef.current = mapped[mapped.length - 1].id
+            }
+            setError(null)
+        } catch (err) {
+            console.error(err)
+            if (reset) setError('Failed to load products')
+        } finally {
+            setLoadingInitial(false)
+            setLoadingMore(false)
+            isFetching.current = false
+        }
+    }, [search, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, inStockOnly, minRating, sortBy])
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -213,11 +248,17 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             }
         }
         loadCategories()
-    }, [])
+        fetchPage(true)
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadWishlist()
     }, [isLoggedIn, loadWishlist])
+
+    useEffect(() => {
+        if (loadingInitial) return
+        fetchPage(true)
+    }, [fetchPage])
 
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
@@ -240,43 +281,6 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
             console.error('Wishlist toggle error', err)
         }
     }
-
-    const filteredProducts = useMemo(() => {
-        const minPriceNumber = minPrice ? Number(minPrice) : null
-        const maxPriceNumber = maxPrice ? Number(maxPrice) : null
-        const minRatingNumber = Number(minRating)
-
-        let result = [...allProducts]
-
-        if (selectedCategory !== 'all') result = result.filter(p => p.categorySlug === selectedCategory)
-        if (selectedBrand !== 'all') result = result.filter(p => p.brandSlug === selectedBrand)
-        if (selectedColor !== 'all') result = result.filter(p => normalizeText(p.color) === selectedColor)
-        if (selectedMaterial !== 'all') result = result.filter(p => normalizeText(p.material) === selectedMaterial)
-        if (selectedEnergyClass !== 'all') result = result.filter(p => normalizeText(p.energyClass) === selectedEnergyClass)
-        if (minPriceNumber !== null && !Number.isNaN(minPriceNumber)) result = result.filter(p => p.price >= minPriceNumber)
-        if (maxPriceNumber !== null && !Number.isNaN(maxPriceNumber)) result = result.filter(p => p.price <= maxPriceNumber)
-        if (!Number.isNaN(minRatingNumber) && minRatingNumber > 0) result = result.filter(p => (p.rating ?? 0) >= minRatingNumber)
-        if (inStockOnly) result = result.filter(p => p.stock > 0)
-
-        if (search.trim()) {
-            const q = search.trim().toLowerCase()
-            result = result.filter(p =>
-                p.name.toLowerCase().includes(q) ||
-                p.brand.toLowerCase().includes(q) ||
-                p.category.toLowerCase().includes(q)
-            )
-        }
-
-        switch (sortBy) {
-            case 'price-asc': result.sort((a, b) => a.price - b.price); break
-            case 'price-desc': result.sort((a, b) => b.price - a.price); break
-            case 'rating-desc': result.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)); break
-            case 'name-asc': result.sort((a, b) => a.name.localeCompare(b.name)); break
-            default: break
-        }
-
-        return result
-    }, [allProducts, selectedCategory, selectedBrand, selectedColor, selectedMaterial, selectedEnergyClass, minPrice, maxPrice, minRating, inStockOnly, sortBy, search])
 
     const categoryTree = useMemo(() => {
         if (flatCategories.length === 0) return []
@@ -315,46 +319,46 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
 
     const brands: FilterOption[] = useMemo(() => {
         const unique = new Map<string, FilterOption>()
-        allProducts.forEach((product) => {
+        products.forEach((product) => {
             if (!unique.has(product.brandSlug)) {
                 unique.set(product.brandSlug, { name: product.brand, slug: product.brandSlug })
             }
         })
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [allProducts])
+    }, [products])
 
     const colors: FilterOption[] = useMemo(() => {
         const unique = new Map<string, FilterOption>()
-        allProducts.forEach((product) => {
+        products.forEach((product) => {
             const value = normalizeText(product.color)
             if (value && !unique.has(value)) {
                 unique.set(value, { name: product.color as string, slug: value })
             }
         })
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [allProducts])
+    }, [products])
 
     const materials: FilterOption[] = useMemo(() => {
         const unique = new Map<string, FilterOption>()
-        allProducts.forEach((product) => {
+        products.forEach((product) => {
             const value = normalizeText(product.material)
             if (value && !unique.has(value)) {
                 unique.set(value, { name: product.material as string, slug: value })
             }
         })
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [allProducts])
+    }, [products])
 
     const energyClasses: FilterOption[] = useMemo(() => {
         const unique = new Map<string, FilterOption>()
-        allProducts.forEach((product) => {
+        products.forEach((product) => {
             const value = normalizeText(product.energyClass)
             if (value && !unique.has(value)) {
                 unique.set(value, { name: product.energyClass as string, slug: value })
             }
         })
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [allProducts])
+    }, [products])
 
     const resetFilters = () => {
         setSelectedCategory('all')
@@ -368,6 +372,23 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         setInStockOnly(false)
         setSortBy('default')
     }
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current
+        if (!sentinel) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loadingMore && !loadingInitial) {
+                    fetchPage(false)
+                }
+            },
+            { rootMargin: '200px' }
+        )
+
+        observer.observe(sentinel)
+        return () => observer.disconnect()
+    }, [hasMore, loadingMore, loadingInitial, fetchPage])
 
     return (
         <div className="home-page">
@@ -476,17 +497,17 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             </div>
                         </div>
 
-                        <div className="home-count">{filteredProducts.length} items</div>
+                        <div className="home-count">{products.length} items loaded</div>
 
-                        {loading ? (
+                        {loadingInitial ? (
                             <div className="home-empty">Loading products...</div>
                         ) : error ? (
                             <div className="home-empty">{error}</div>
-                        ) : filteredProducts.length === 0 ? (
+                        ) : products.length === 0 ? (
                             <div className="home-empty">No products found.</div>
                         ) : (
                             <div className="home-grid">
-                                {filteredProducts.map((product) => (
+                                {products.map((product) => (
                                     <ProductCard
                                         key={product.id}
                                         product={product}
@@ -495,6 +516,15 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                                     />
                                 ))}
                             </div>
+                        )}
+
+                        <div ref={sentinelRef} style={{ height: 1 }} />
+
+                        {loadingMore && (
+                            <div className="home-loading-more">Loading more...</div>
+                        )}
+                        {!hasMore && products.length > 0 && !loadingInitial && (
+                            <div className="home-no-more">You've reached the end of the list.</div>
                         )}
                     </section>
                 </section>
