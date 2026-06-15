@@ -108,19 +108,24 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
             where.stock = { gt: 0 }
         }
 
-        let orderBy: any = { stock: 'desc' };
+        // Сортування: спочатку за наявністю (stock > 0 – вище), потім за вибраним критерієм
+        const orderBy: any[] = [{ stock: 'desc' }]   // товари в наявності перші
 
         if (sort === 'price-asc') {
-            orderBy = { price: 'asc' };
+            orderBy.push({ price: 'asc' })
         } else if (sort === 'price-desc') {
-            orderBy = { price: 'desc' };
+            orderBy.push({ price: 'desc' })
         } else if (sort === 'rating-desc') {
-            orderBy = { rating: 'desc' };
+            orderBy.push({ rating: 'desc' })
         } else if (sort === 'name-asc') {
-            orderBy = { name: 'asc' };
+            orderBy.push({ name: 'asc' })
+        } else {
+            // default – додаємо сортування за датою, щоб усередині групи був стабільний порядок
+            orderBy.push({ createdAt: 'desc' })
         }
 
-        const finalOrderBy: any[] = [orderBy, { id: 'asc' }];
+        // Завжди останнім – id для стабільності курсорної пагінації
+        orderBy.push({ id: 'asc' })
 
         const products = await prisma.product.findMany({
             where,
@@ -130,7 +135,7 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
                 category: true,
                 brand: true,
             },
-            orderBy: finalOrderBy,
+            orderBy,
             ...(cursor && { cursor: { id: cursor }, skip: 1 }),
             take,
         })
