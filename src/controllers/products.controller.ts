@@ -109,17 +109,18 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
             where.stock = { gt: 0 }
         }
 
-        // Визначаємо сортування
-        let orderBy: any = { id: 'asc' } // дефолтне
+        const orderBy: any[] = [{ stock: 'desc' }]; // більший stock вище, нульові – в кінці
+
         if (sort === 'price-asc') {
-            orderBy = { price: 'asc' }
+            orderBy.push({ price: 'asc' });
         } else if (sort === 'price-desc') {
-            orderBy = { price: 'desc' }
+            orderBy.push({ price: 'desc' });
         } else if (sort === 'rating-desc') {
-            orderBy = { rating: 'desc' }
+            orderBy.push({ rating: 'desc' });
         } else if (sort === 'name-asc') {
-            orderBy = { name: 'asc' }
+            orderBy.push({ name: 'asc' });
         }
+        orderBy.push({ id: 'asc' });
 
         const products = await prisma.product.findMany({
             where,

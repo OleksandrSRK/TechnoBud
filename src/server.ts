@@ -16,6 +16,7 @@ import reviewsRoutes from './routes/reviews.routes'
 import cartRoutes from './routes/cart.routes'
 import wishlistRoutes from './routes/wishlist.routes'
 import addressesRoutes from './routes/addresses.routes'
+import filtersRoutes from './routes/filters.routes'
 
 console.log('[DEBUG] Starting Prisma configuration...')
 
@@ -78,6 +79,7 @@ app.use('/reviews', reviewsRoutes)
 app.use('/cart', cartRoutes)
 app.use('/wishlist', wishlistRoutes)
 app.use('/addresses', addressesRoutes)
+app.use('/filters', filtersRoutes)
 
 app.get('/', (_req, res) => {
     res.send('API is working')

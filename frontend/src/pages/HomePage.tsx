@@ -98,10 +98,6 @@ function toNumber(value: unknown): number {
     return 0
 }
 
-function normalizeText(value?: string | null): string {
-    return (value || '').trim().toLowerCase()
-}
-
 export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [products, setProducts] = useState<ViewProduct[]>([])
     const [loadingInitial, setLoadingInitial] = useState(true)
@@ -119,6 +115,11 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
     const [maxPrice, setMaxPrice] = useState('')
     const [inStockOnly, setInStockOnly] = useState(false)
     const [sortBy, setSortBy] = useState('default')
+
+    const [allBrands, setAllBrands] = useState<FilterOption[]>([])
+    const [allColors, setAllColors] = useState<FilterOption[]>([])
+    const [allMaterials, setAllMaterials] = useState<FilterOption[]>([])
+    const [allEnergyClasses, setAllEnergyClasses] = useState<FilterOption[]>([])
 
     const [wishlistIds, setWishlistIds] = useState<number[]>([])
     const [flatCategories, setFlatCategories] = useState<CategoryRaw[]>([])
@@ -260,6 +261,39 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         fetchPage(true)
     }, [fetchPage])
 
+    // Завантаження повних списків для фільтрів
+    useEffect(() => {
+        const loadFilters = async () => {
+            try {
+                const [brandsRes, colorsRes, materialsRes, energyRes] = await Promise.all([
+                    fetch(`${API_BASE}/filters/brands`),
+                    fetch(`${API_BASE}/filters/colors`),
+                    fetch(`${API_BASE}/filters/materials`),
+                    fetch(`${API_BASE}/filters/energy-classes`),
+                ])
+                if (brandsRes.ok) {
+                    const data = await brandsRes.json()
+                    setAllBrands(data.map((b: any) => ({ name: b.name, slug: b.slug })))
+                }
+                if (colorsRes.ok) {
+                    const colors: string[] = await colorsRes.json()
+                    setAllColors(colors.map(c => ({ name: c, slug: c.toLowerCase() })))
+                }
+                if (materialsRes.ok) {
+                    const materials: string[] = await materialsRes.json()
+                    setAllMaterials(materials.map(m => ({ name: m, slug: m.toLowerCase() })))
+                }
+                if (energyRes.ok) {
+                    const energies: string[] = await energyRes.json()
+                    setAllEnergyClasses(energies.map(e => ({ name: e, slug: e.toLowerCase() })))
+                }
+            } catch (err) {
+                console.error('Failed to load filter options', err)
+            }
+        }
+        loadFilters()
+    }, [])
+
     const handleToggleWishlist = async (productId: number) => {
         const token = localStorage.getItem('token')
         if (!token) return
@@ -316,49 +350,6 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         }
         return renderOptions(categoryTree)
     }, [categoryTree])
-
-    const brands: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            if (!unique.has(product.brandSlug)) {
-                unique.set(product.brandSlug, { name: product.brand, slug: product.brandSlug })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const colors: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.color)
-            if (value && !unique.has(value)) {
-                unique.set(value, { name: product.color as string, slug: value })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const materials: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.material)
-            if (value && !unique.has(value)) {
-                unique.set(value, { name: product.material as string, slug: value })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
-
-    const energyClasses: FilterOption[] = useMemo(() => {
-        const unique = new Map<string, FilterOption>()
-        products.forEach((product) => {
-            const value = normalizeText(product.energyClass)
-            if (value && !unique.has(value)) {
-                unique.set(value, { name: product.energyClass as string, slug: value })
-            }
-        })
-        return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name))
-    }, [products])
 
     const resetFilters = () => {
         setSelectedCategory('all')
@@ -429,7 +420,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <label htmlFor="brand">Brand</label>
                             <select id="brand" value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)}>
                                 <option value="all">All brands</option>
-                                {brands.map((brand) => (
+                                {allBrands.map((brand) => (
                                     <option key={brand.slug} value={brand.slug}>{brand.name}</option>
                                 ))}
                             </select>
@@ -449,7 +440,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <label htmlFor="color">Color</label>
                             <select id="color" value={selectedColor} onChange={(e) => setSelectedColor(e.target.value)}>
                                 <option value="all">All colors</option>
-                                {colors.map((color) => (
+                                {allColors.map((color) => (
                                     <option key={color.slug} value={color.slug}>{color.name}</option>
                                 ))}
                             </select>
@@ -458,7 +449,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <label htmlFor="material">Material</label>
                             <select id="material" value={selectedMaterial} onChange={(e) => setSelectedMaterial(e.target.value)}>
                                 <option value="all">All materials</option>
-                                {materials.map((material) => (
+                                {allMaterials.map((material) => (
                                     <option key={material.slug} value={material.slug}>{material.name}</option>
                                 ))}
                             </select>
@@ -467,7 +458,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
                             <label htmlFor="energyClass">Energy class</label>
                             <select id="energyClass" value={selectedEnergyClass} onChange={(e) => setSelectedEnergyClass(e.target.value)}>
                                 <option value="all">All classes</option>
-                                {energyClasses.map((energyClass) => (
+                                {allEnergyClasses.map((energyClass) => (
                                     <option key={energyClass.slug} value={energyClass.slug}>{energyClass.name}</option>
                                 ))}
                             </select>
