@@ -15,9 +15,9 @@ const router = Router()
 
 router.get('/', getProducts)
 router.get('/paginated', getProductsPaginated)
+router.get('/all', authMiddleware, requireAdmin, getAllProducts)
 router.get('/:id', getProductById)
 
-router.get('/all', authMiddleware, requireAdmin, getAllProducts)
 router.post('/', authMiddleware, requireAdmin, createProduct)
 router.put('/:id', authMiddleware, requireAdmin, updateProduct)
 router.patch('/:id', authMiddleware, requireAdmin, updateProduct)
