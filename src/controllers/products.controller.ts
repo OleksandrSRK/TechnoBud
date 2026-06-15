@@ -60,6 +60,12 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
         const brandSlug = req.query.brand as string | undefined
         const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined
         const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined
+        const color = req.query.color as string | undefined
+        const material = req.query.material as string | undefined
+        const energyClass = req.query.energyClass as string | undefined
+        const minRating = req.query.minRating ? Number(req.query.minRating) : undefined
+        const inStockOnly = req.query.inStockOnly === 'true'
+        const sort = req.query.sort as string | undefined
         const cursor = req.query.cursor ? Number(req.query.cursor) : undefined
         const take = Math.min(100, Number(req.query.take) || 12)
 
@@ -87,6 +93,33 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
             if (minPrice !== undefined) where.price.gte = minPrice
             if (maxPrice !== undefined) where.price.lte = maxPrice
         }
+        if (color && color !== 'all') {
+            where.color = color
+        }
+        if (material && material !== 'all') {
+            where.material = material
+        }
+        if (energyClass && energyClass !== 'all') {
+            where.energyClass = energyClass
+        }
+        if (minRating !== undefined) {
+            where.rating = { gte: minRating }
+        }
+        if (inStockOnly) {
+            where.stock = { gt: 0 }
+        }
+
+        // Визначаємо сортування
+        let orderBy: any = { id: 'asc' } // дефолтне
+        if (sort === 'price-asc') {
+            orderBy = { price: 'asc' }
+        } else if (sort === 'price-desc') {
+            orderBy = { price: 'desc' }
+        } else if (sort === 'rating-desc') {
+            orderBy = { rating: 'desc' }
+        } else if (sort === 'name-asc') {
+            orderBy = { name: 'asc' }
+        }
 
         const products = await prisma.product.findMany({
             where,
@@ -96,7 +129,7 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
                 category: true,
                 brand: true,
             },
-            orderBy: { id: 'asc' },
+            orderBy,
             ...(cursor && { cursor: { id: cursor }, skip: 1 }),
             take,
         })

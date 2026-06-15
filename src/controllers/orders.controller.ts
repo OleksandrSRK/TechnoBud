@@ -109,47 +109,57 @@ export const createOrder = async (req: Request, res: Response) => {
         const totalAmount = subtotal
         const orderNumber = `ORD-${Date.now()}-${userId}`
 
-        const order = await prisma.order.create({
-            data: {
-                orderNumber,
-                customerName,
-                customerPhone,
-                customerEmail,
-                shippingAddress,
-                subtotal,
-                totalAmount,
-                notes,
-                userId,
-                status: 'PENDING',
-                items: {
-                    create: cart.items.map((item: any) => ({
-                        quantity: item.quantity,
-                        unitPrice: item.product.price,
-                        totalPrice: Number(item.product.price) * item.quantity,
-                        productId: item.productId,
-                        productNameSnapshot: item.product.name,
-                        brandNameSnapshot: item.product.brand?.name || null,
-                        skuSnapshot: item.product.sku,
-                    })),
-                },
-            },
-            include: {
-                items: true,
-            },
-        })
-
-        for (const item of cart.items) {
-            await prisma.product.update({
-                where: { id: item.productId },
+        const order = await prisma.$transaction(async (tx) => {
+            // 1. Створюємо замовлення
+            const newOrder = await tx.order.create({
                 data: {
-                    stock: { decrement: item.quantity },
-                    reservedStock: { increment: item.quantity },
+                    orderNumber,
+                    customerName,
+                    customerPhone,
+                    customerEmail,
+                    shippingAddress,
+                    subtotal,
+                    totalAmount,
+                    notes,
+                    userId,
+                    status: 'PENDING',
+                    items: {
+                        create: cart.items.map((item: any) => ({
+                            quantity: item.quantity,
+                            unitPrice: item.product.price,
+                            totalPrice: Number(item.product.price) * item.quantity,
+                            productId: item.productId,
+                            productNameSnapshot: item.product.name,
+                            brandNameSnapshot: item.product.brand?.name || null,
+                            skuSnapshot: item.product.sku,
+                        })),
+                    },
+                },
+                include: {
+                    items: true,
                 },
             })
-        }
 
-        await prisma.cartItem.deleteMany({ where: { cartId: cart.id } })
-        await prisma.cart.update({ where: { id: cart.id }, data: { status: 'CONVERTED' } })
+            // 2. Оновлюємо залишки
+            for (const item of cart.items) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        stock: { decrement: item.quantity },
+                        reservedStock: { increment: item.quantity },
+                    },
+                })
+            }
+
+            // 3. Очищуємо кошик
+            await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
+            await tx.cart.update({
+                where: { id: cart.id },
+                data: { status: 'CONVERTED' },
+            })
+
+            return newOrder
+        })
 
         res.status(201).json(order)
     } catch (error) {

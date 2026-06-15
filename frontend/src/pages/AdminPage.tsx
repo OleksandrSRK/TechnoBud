@@ -53,7 +53,7 @@ export default function AdminPage() {
         if (res.ok) setUsers(await res.json())
     }
     const loadProducts = async () => {
-        const res = await fetch(`${API}/products/all?include=images,category,brand`, { headers })
+        const res = await fetch(`${API}/products/all`, { headers })
         if (res.ok) setProducts(await res.json())
     }
     const loadCategories = async () => {

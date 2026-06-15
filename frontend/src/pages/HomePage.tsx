@@ -249,7 +249,7 @@ export default function HomePage({ search, isLoggedIn }: HomePageProps) {
         }
         loadCategories()
         fetchPage(true)
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         loadWishlist()
