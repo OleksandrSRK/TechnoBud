@@ -34,7 +34,6 @@ export const getProducts = async (req: Request, res: Response) => {
             ];
         }
 
-        // Жодних skip / take – повертаємо всі товари
         const products = await prisma.product.findMany({
             where,
             include: {
@@ -109,18 +108,19 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
             where.stock = { gt: 0 }
         }
 
-        const orderBy: any[] = [{ stock: 'desc' }]; // більший stock вище, нульові – в кінці
+        let orderBy: any = { stock: 'desc' };
 
         if (sort === 'price-asc') {
-            orderBy.push({ price: 'asc' });
+            orderBy = { price: 'asc' };
         } else if (sort === 'price-desc') {
-            orderBy.push({ price: 'desc' });
+            orderBy = { price: 'desc' };
         } else if (sort === 'rating-desc') {
-            orderBy.push({ rating: 'desc' });
+            orderBy = { rating: 'desc' };
         } else if (sort === 'name-asc') {
-            orderBy.push({ name: 'asc' });
+            orderBy = { name: 'asc' };
         }
-        orderBy.push({ id: 'asc' });
+
+        const finalOrderBy: any[] = [orderBy, { id: 'asc' }];
 
         const products = await prisma.product.findMany({
             where,
@@ -130,7 +130,7 @@ export const getProductsPaginated = async (req: Request, res: Response) => {
                 category: true,
                 brand: true,
             },
-            orderBy,
+            orderBy: finalOrderBy,
             ...(cursor && { cursor: { id: cursor }, skip: 1 }),
             take,
         })
